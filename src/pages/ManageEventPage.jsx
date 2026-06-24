@@ -65,10 +65,10 @@ export default function ManageEventPage() {
         const ext = form.file.name.split('.').pop()
         const path = `${rallyId}/${Date.now()}.${ext}`
         const { error: uploadErr } = await supabase.storage
-          .from('rally.docs')
+          .from('rally-docs')
           .upload(path, form.file, { contentType: form.file.type })
         if (uploadErr) throw uploadErr
-        const { data: { publicUrl } } = supabase.storage.from('rally.docs').getPublicUrl(path)
+        const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
         fileUrl = publicUrl
         fileType = 'pdf'
       }
@@ -111,11 +111,11 @@ export default function ManageEventPage() {
       // Upload PDF to storage
       const path = `${rallyId}/regulations_${Date.now()}.pdf`
       const { error: uploadErr } = await supabase.storage
-        .from('rally.docs')
+        .from('rally-docs')
         .upload(path, regsFile, { contentType: 'application/pdf', upsert: true })
       if (uploadErr) throw uploadErr
 
-      const { data: { publicUrl } } = supabase.storage.from('rally.docs').getPublicUrl(path)
+      const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
 
       // Save the URL
       await supabase.from('rallies').update({ regulations_pdf_url: publicUrl }).eq('id', rallyId)
