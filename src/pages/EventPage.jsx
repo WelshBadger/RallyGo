@@ -153,22 +153,16 @@ export default function EventPage() {
                 <p className="text-white text-sm">{rally.regulations_data.clerkOfCourse}</p>
               </div>
             )}
-            {rally.regulations_data.organiser?.contact && (
+            {rally.series && (
               <div>
-                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Organiser</p>
-                <p className="text-white text-sm">{rally.regulations_data.organiser.contact}</p>
-                {rally.regulations_data.organiser.phone && (
-                  <p className="text-white/50 text-xs mt-0.5">{rally.regulations_data.organiser.phone}</p>
-                )}
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Championship</p>
+                <p className="text-white text-sm">{rally.series}</p>
               </div>
             )}
-            {rally.regulations_data.stageCount > 0 && (
+            {rally.regulations_data.totalStageDistance && (
               <div>
-                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Stages</p>
-                <p className="text-white text-sm">{rally.regulations_data.stageCount} stages</p>
-                {rally.regulations_data.totalStageDistance && (
-                  <p className="text-white/50 text-xs mt-0.5">{rally.regulations_data.totalStageDistance} competitive</p>
-                )}
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Total Stage Distance</p>
+                <p className="text-white text-sm">{rally.regulations_data.totalStageDistance}</p>
               </div>
             )}
             {rally.regulations_data.serviceArea && (
@@ -177,10 +171,10 @@ export default function EventPage() {
                 <p className="text-white text-sm">{rally.regulations_data.serviceArea}</p>
               </div>
             )}
-            {rally.regulations_data.entryFeesSummary && (
+            {rally.regulations_data.dates && (
               <div>
-                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Entry Fees</p>
-                <p className="text-white text-sm">{rally.regulations_data.entryFeesSummary}</p>
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Dates</p>
+                <p className="text-white text-sm">{rally.regulations_data.dates}</p>
               </div>
             )}
           </div>
