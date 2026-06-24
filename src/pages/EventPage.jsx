@@ -140,7 +140,7 @@ export default function EventPage() {
       {rally.regulations_data && (
         <section className="mb-6">
           <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium mb-3">Event at a glance</p>
-          <div className="bg-rl-card border border-white/10 rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="bg-rl-card border border-white/10 rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-5">
             {rally.regulations_data.rallyHQ && (
               <div>
                 <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Rally HQ</p>

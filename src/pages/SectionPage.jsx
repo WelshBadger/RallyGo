@@ -55,7 +55,7 @@ export default function SectionPage() {
   }, [rallyId, section])
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-6">
+    <main className="max-w-3xl mx-auto px-4 py-5 sm:py-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-xs text-white/30 mb-5">
         <Link to="/" className="hover:text-white/60 no-underline transition-colors">Events</Link>
@@ -76,52 +76,52 @@ export default function SectionPage() {
         <div className="mb-6 space-y-3">
           <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium">From regulations</p>
 
-          <div className="bg-rl-card border border-white/10 rounded-xl divide-y divide-white/8">
+          <div className="bg-rl-card border border-white/10 rounded-2xl divide-y divide-white/8">
             {rally.regulations_data.rallyHQ && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Rally HQ</p>
-                <p className="text-white text-sm">{rally.regulations_data.rallyHQ}</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Rally HQ</p>
+                <p className="text-white text-sm leading-snug">{rally.regulations_data.rallyHQ}</p>
               </div>
             )}
             {rally.regulations_data.organiser?.club && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Organising Club</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Organising Club</p>
                 <p className="text-white text-sm">{rally.regulations_data.organiser.club}</p>
               </div>
             )}
             {rally.regulations_data.organiser?.contact && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Organiser Contact</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Organiser Contact</p>
                 <p className="text-white text-sm">{rally.regulations_data.organiser.contact}</p>
                 {rally.regulations_data.organiser.phone && (
-                  <p className="text-white/50 text-xs mt-0.5">{rally.regulations_data.organiser.phone}</p>
+                  <a href={`tel:${rally.regulations_data.organiser.phone}`} className="text-rl-accent text-sm mt-0.5 block">{rally.regulations_data.organiser.phone}</a>
                 )}
                 {rally.regulations_data.organiser.email && (
-                  <p className="text-white/50 text-xs mt-0.5">{rally.regulations_data.organiser.email}</p>
+                  <a href={`mailto:${rally.regulations_data.organiser.email}`} className="text-rl-accent text-xs mt-0.5 block">{rally.regulations_data.organiser.email}</a>
                 )}
               </div>
             )}
             {rally.regulations_data.clerkOfCourse && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Clerk of Course</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Clerk of Course</p>
                 <p className="text-white text-sm">{rally.regulations_data.clerkOfCourse}</p>
               </div>
             )}
             {rally.regulations_data.reconDate && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Reconnaissance</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Reconnaissance</p>
                 <p className="text-white text-sm">{rally.regulations_data.reconDate}</p>
               </div>
             )}
             {rally.regulations_data.entryFeesSummary && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Entry Fees</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Entry Fees</p>
                 <p className="text-white text-sm">{rally.regulations_data.entryFeesSummary}</p>
               </div>
             )}
             {rally.regulations_data.vehicleClasses && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Vehicle Classes</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Vehicle Classes</p>
                 <p className="text-white text-sm">{rally.regulations_data.vehicleClasses}</p>
               </div>
             )}
@@ -155,40 +155,40 @@ export default function SectionPage() {
       {!loading && section === 'team' && rally?.regulations_data && (
         <div className="mb-6">
           <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium mb-3">From regulations</p>
-          <div className="bg-rl-card border border-white/10 rounded-xl divide-y divide-white/8">
+          <div className="bg-rl-card border border-white/10 rounded-2xl divide-y divide-white/8">
             {rally.regulations_data.organiser?.club && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Organising Club</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Organising Club</p>
                 <p className="text-white text-sm">{rally.regulations_data.organiser.club}</p>
               </div>
             )}
             {rally.regulations_data.clerkOfCourse && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Clerk of Course</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Clerk of Course</p>
                 <p className="text-white text-sm">{rally.regulations_data.clerkOfCourse}</p>
               </div>
             )}
             {rally.regulations_data.safetyDelegate && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Safety Delegate</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Safety Delegate</p>
                 <p className="text-white text-sm">{rally.regulations_data.safetyDelegate}</p>
               </div>
             )}
             {rally.regulations_data.organiser?.contact && (
-              <div className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">Organiser Contact</p>
+              <div className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Organiser Contact</p>
                 <p className="text-white text-sm">{rally.regulations_data.organiser.contact}</p>
                 {rally.regulations_data.organiser.phone && (
-                  <p className="text-white/50 text-xs mt-0.5">{rally.regulations_data.organiser.phone}</p>
+                  <a href={`tel:${rally.regulations_data.organiser.phone}`} className="text-rl-accent text-sm mt-0.5 block">{rally.regulations_data.organiser.phone}</a>
                 )}
                 {rally.regulations_data.organiser.email && (
-                  <p className="text-white/50 text-xs mt-0.5">{rally.regulations_data.organiser.email}</p>
+                  <a href={`mailto:${rally.regulations_data.organiser.email}`} className="text-rl-accent text-xs mt-0.5 block">{rally.regulations_data.organiser.email}</a>
                 )}
               </div>
             )}
             {rally.regulations_data.keyOfficials?.map((official, i) => (
-              <div key={i} className="px-4 py-3">
-                <p className="text-white/35 text-xs mb-0.5">{official.role}</p>
+              <div key={i} className="px-4 py-4">
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">{official.role}</p>
                 <p className="text-white text-sm">{official.name}</p>
               </div>
             ))}

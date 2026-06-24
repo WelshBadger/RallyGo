@@ -219,28 +219,46 @@ export default function ManageEventPage() {
           </div>
         ) : null}
 
-        <form onSubmit={handleRegsUpload} className="flex items-center gap-3">
+        <form onSubmit={handleRegsUpload} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <input
             type="file"
             accept=".pdf"
             onChange={e => setRegsFile(e.target.files[0])}
-            className="flex-1 text-xs text-white/50 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white/70 cursor-pointer"
+            className="flex-1 text-xs text-white/50 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white/70 cursor-pointer"
           />
           <button
             type="submit"
             disabled={!regsFile || regsUploading || regsExtracting}
-            className="rl-btn-primary text-xs flex-shrink-0 flex items-center gap-2 disabled:opacity-50"
+            className="rl-btn-primary text-xs flex-shrink-0 flex items-center justify-center gap-2 disabled:opacity-50 py-2.5"
           >
-            {regsUploading && <span className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
-            {regsExtracting && <span className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+            {(regsUploading || regsExtracting) && <span className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
             {regsUploading ? 'Uploading…' : regsExtracting ? 'Extracting…' : rally.regulations_data ? 'Replace' : 'Upload & Extract'}
           </button>
         </form>
       </div>
 
+      {/* Section tabs — horizontal scroll on mobile, vertical sidebar on desktop */}
+      <div className="mb-4 lg:hidden">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {SECTIONS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => switchSection(s.key)}
+              className={`flex-shrink-0 text-xs px-3.5 py-2 rounded-lg transition-all ${
+                activeSection === s.key
+                  ? 'bg-rl-accent/15 text-white border border-rl-accent/30'
+                  : 'text-white/50 border border-white/10 hover:text-white'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Section tabs (left) */}
-        <div className="lg:col-span-1">
+        {/* Section tabs — vertical sidebar on desktop only */}
+        <div className="hidden lg:block lg:col-span-1">
           <p className="rl-label mb-2">Section</p>
           <div className="space-y-1">
             {SECTIONS.map((s) => (

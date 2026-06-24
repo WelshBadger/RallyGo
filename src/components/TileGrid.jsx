@@ -71,39 +71,41 @@ const SECTIONS = [
 
 export default function TileGrid({ rallyId, newCounts = {} }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
       {SECTIONS.map((section) => {
         const newCount = newCounts[section.key] || 0
         return (
           <Link
             key={section.key}
             to={`/event/${rallyId}/${section.key}`}
-            className="group relative bg-rl-card border border-white/10 rounded-xl p-4 hover:border-white/25 transition-all duration-150 no-underline"
+            className="group relative bg-rl-card border border-white/10 rounded-2xl p-4 sm:p-4 hover:border-white/25 active:scale-[0.97] transition-all duration-150 no-underline min-h-[120px] flex flex-col"
           >
             {/* Coloured accent strip */}
             <div
-              className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl"
+              className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl"
               style={{ background: section.color }}
             />
 
             {/* New badge */}
             {newCount > 0 && (
               <span className="absolute top-3 right-3 bg-rl-accent text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none">
-                {newCount} new
+                {newCount}
               </span>
             )}
 
             {/* Icon */}
-            <div className="mb-3 mt-1" style={{ color: section.color }}>
+            <div className="mb-3 mt-1 flex-shrink-0" style={{ color: section.color }}>
               {section.icon}
             </div>
 
             {/* Label */}
-            <p className="text-white text-sm font-medium leading-tight mb-1">{section.label}</p>
-            <p className="text-white/40 text-xs leading-tight">{section.sub}</p>
+            <div className="flex-1">
+              <p className="text-white text-sm font-medium leading-tight mb-1">{section.label}</p>
+              <p className="text-white/40 text-[11px] leading-tight hidden sm:block">{section.sub}</p>
+            </div>
 
             {/* Arrow */}
-            <div className="absolute bottom-3.5 right-4 text-white/25 group-hover:text-white/50 transition-colors">
+            <div className="absolute bottom-3.5 right-3.5 text-white/20 group-hover:text-white/50 transition-colors">
               <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
                 <path fillRule="evenodd" d="M8.22 2.97a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06l2.97-2.97H3.75a.75.75 0 010-1.5h7.44L8.22 4.03a.75.75 0 010-1.06z" clipRule="evenodd" />
               </svg>
