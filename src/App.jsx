@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import HomePage from './pages/HomePage'
 import CalendarPage from './pages/CalendarPage'
+import CalendarEventPage from './pages/CalendarEventPage'
 import EventPage from './pages/EventPage'
 import SectionPage from './pages/SectionPage'
 import LoginPage from './pages/LoginPage'
@@ -40,6 +41,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/calendar/event/:id" element={<CalendarEventPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/event/:rallyId" element={<EventPage />} />

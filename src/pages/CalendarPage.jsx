@@ -232,15 +232,11 @@ function CalendarGrid({ days, events, year, month, onPrev, onNext, onSelect, now
                   const cancelled = event.status === 'cancelled'
                   const isRallyGo = !!event.rally_id
 
-                  return (
-                    <button
+                  const pill = (
+                    <div
                       key={event.id}
-                      onClick={() => {
-                        if (isRallyGo && !cancelled) navigate(`/event/${event.rally_id}`)
-                        else onSelect(event)
-                      }}
                       className={`w-full text-left flex items-center gap-1 transition-all group ${
-                        cancelled ? 'opacity-40' : 'hover:opacity-90'
+                        cancelled ? 'opacity-40' : 'cursor-pointer hover:opacity-90'
                       }`}
                     >
                       <div className={`
@@ -261,8 +257,12 @@ function CalendarGrid({ days, events, year, month, onPrev, onNext, onSelect, now
                           <span className="ml-auto flex-shrink-0 w-1 h-1 rounded-full bg-white/60 mr-1" />
                         )}
                       </div>
-                    </button>
+                    </div>
                   )
+
+                  return isRallyGo && !cancelled
+                    ? <Link key={event.id} to={`/event/${event.rally_id}`} className="block no-underline">{pill}</Link>
+                    : <Link key={event.id} to={`/calendar/event/${event.id}`} className="block no-underline">{pill}</Link>
                 })}
               </div>
             </div>
@@ -396,5 +396,5 @@ function ListCard({ event }) {
     </div>
   )
   if (isRallyGo && !isCancelled) return <Link to={`/event/${event.rally_id}`} className="block no-underline h-full">{card}</Link>
-  return <div className="h-full">{card}</div>
+  return <Link to={`/calendar/event/${event.id}`} className="block no-underline h-full">{card}</Link>
 }
