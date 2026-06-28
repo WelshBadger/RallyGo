@@ -398,14 +398,3 @@ function ListCard({ event }) {
   if (isRallyGo && !isCancelled) return <Link to={`/event/${event.rally_id}`} className="block no-underline h-full">{card}</Link>
   return <div className="h-full">{card}</div>
 }
-
-function groupByMonth(events) {
-  const groups = {}
-  for (const e of events) {
-    const d = new Date(e.date + 'T00:00:00')
-    const key = `${d.getFullYear()}-${d.getMonth()}`
-    if (!groups[key]) groups[key] = { year: d.getFullYear(), month: d.getMonth(), events: [] }
-    groups[key].events.push(e)
-  }
-  return Object.values(groups).sort((a, b) => a.year - b.year || a.month - b.month)
-}
