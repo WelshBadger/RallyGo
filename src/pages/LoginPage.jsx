@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -30,10 +31,10 @@ export default function LoginPage() {
     <main className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="flex items-center gap-2 mb-8">
+        <Link to="/" className="flex items-center gap-2 mb-8 no-underline">
           <span className="w-2 h-2 rounded-full bg-rl-accent" />
           <span className="text-white font-medium">RallyGo</span>
-        </div>
+        </Link>
 
         <h1 className="text-2xl font-medium text-white mb-1">Sign in</h1>
         <p className="text-white/40 text-sm mb-7">
