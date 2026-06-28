@@ -14,6 +14,29 @@
   }
 }
 
+@keyframes navbar-shimmer {
+  0%   { transform: translateX(-200%); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateX(200%); opacity: 0; }
+}
+
+@keyframes navbar-glow-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.9; }
+}
+
+.navbar-shimmer {
+  animation: navbar-shimmer 4s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent 0%, #E24B4A 50%, transparent 100%);
+  width: 40%;
+  height: 100%;
+}
+
+.navbar-glow {
+  animation: navbar-glow-pulse 3s ease-in-out infinite;
+}
+
 @layer components {
   .rl-card {
     @apply bg-rl-card border border-white/10 rounded-xl;
