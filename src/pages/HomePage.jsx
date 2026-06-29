@@ -140,7 +140,11 @@ function NewsCard({ post, featured }) {
   if (featured) {
     return (
       <div className="bg-white/3 border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all">
-        <div className="h-0.5 w-full bg-gradient-to-r from-rl-accent via-rl-accent/50 to-transparent" />
+        {post.image_url ? (
+          <img src={post.image_url} alt={post.title} className="w-full h-52 sm:h-64 object-cover" />
+        ) : (
+          <div className="h-0.5 w-full bg-gradient-to-r from-rl-accent via-rl-accent/50 to-transparent" />
+        )}
         <div className="p-6">
           {date && <p className="text-white/30 text-xs mb-3">{date}</p>}
           <h2 className="text-white font-semibold text-xl sm:text-2xl leading-snug mb-2">{post.title}</h2>
@@ -152,12 +156,15 @@ function NewsCard({ post, featured }) {
   }
 
   return (
-    <div className="bg-white/3 border border-white/8 rounded-xl px-5 py-4 hover:border-white/18 transition-all">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
+    <div className="bg-white/3 border border-white/8 rounded-xl overflow-hidden hover:border-white/18 transition-all">
+      <div className="flex items-stretch gap-0">
+        {post.image_url && (
+          <img src={post.image_url} alt={post.title} className="w-24 sm:w-32 object-cover flex-shrink-0" />
+        )}
+        <div className="flex-1 min-w-0 px-5 py-4">
           {date && <p className="text-white/25 text-xs mb-1">{date}</p>}
           <h3 className="text-white font-medium text-sm leading-snug">{post.title}</h3>
-          {post.excerpt && <p className="text-white/40 text-xs mt-1 truncate">{post.excerpt}</p>}
+          {post.excerpt && <p className="text-white/40 text-xs mt-1 line-clamp-2">{post.excerpt}</p>}
         </div>
       </div>
     </div>

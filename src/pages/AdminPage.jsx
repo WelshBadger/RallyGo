@@ -119,16 +119,38 @@ function NewsTab() {
 }
 
 function NewsEditor({ post, userId, onSave, onCancel }) {
-  const [title, setTitle]   = useState(post?.title   || '')
-  const [excerpt, setExcerpt] = useState(post?.excerpt || '')
-  const [body, setBody]     = useState(post?.body     || '')
-  const [saving, setSaving] = useState(false)
+  const [title, setTitle]     = useState(post?.title     || '')
+  const [excerpt, setExcerpt] = useState(post?.excerpt   || '')
+  const [body, setBody]       = useState(post?.body      || '')
+  const [imageUrl, setImageUrl] = useState(post?.image_url || '')
+  const [uploading, setUploading] = useState(false)
+  const [saving, setSaving]   = useState(false)
+
+  async function handleImageUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) return toast.error('Image must be under 5 MB')
+    setUploading(true)
+    const ext = file.name.split('.').pop()
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { error } = await supabase.storage.from('news-images').upload(path, file, { upsert: false })
+    if (error) { setUploading(false); return toast.error('Upload failed') }
+    const { data } = supabase.storage.from('news-images').getPublicUrl(path)
+    setImageUrl(data.publicUrl)
+    setUploading(false)
+    toast.success('Image uploaded')
+  }
+
+  async function removeImage() {
+    setImageUrl('')
+  }
 
   async function save(publish = false) {
     if (!title.trim() || !body.trim()) return toast.error('Title and body required')
     setSaving(true)
     const payload = {
       title: title.trim(), excerpt: excerpt.trim() || null, body: body.trim(),
+      image_url: imageUrl || null,
       updated_at: new Date().toISOString(),
       ...(publish ? { status: 'published', published_at: new Date().toISOString() } : {}),
     }
@@ -152,12 +174,34 @@ function NewsEditor({ post, userId, onSave, onCancel }) {
       <Field label="Excerpt" hint="shown in previews">
         <input className="rl-input" value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="One-line summary" />
       </Field>
+      <Field label="Cover image" hint="optional">
+        {imageUrl ? (
+          <div className="relative rounded-xl overflow-hidden border border-white/10">
+            <img src={imageUrl} alt="Cover" className="w-full h-48 object-cover" />
+            <button
+              onClick={removeImage}
+              className="absolute top-2 right-2 bg-black/70 hover:bg-black text-white text-xs px-2.5 py-1.5 rounded-lg transition-all"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <label className={`flex flex-col items-center justify-center gap-2 h-32 rounded-xl border border-dashed border-white/15 hover:border-white/30 transition-all cursor-pointer ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+            <svg className="w-6 h-6 text-white/25" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+            </svg>
+            <span className="text-white/30 text-xs">{uploading ? 'Uploading…' : 'Click to upload image'}</span>
+            <span className="text-white/20 text-[10px]">JPG, PNG, WebP · max 5 MB</span>
+            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+          </label>
+        )}
+      </Field>
       <Field label="Body">
         <textarea className="rl-input resize-none leading-relaxed" rows={12} value={body} onChange={e => setBody(e.target.value)} placeholder="Write your post here…" />
       </Field>
       <div className="flex gap-3 pt-2">
-        <button onClick={() => save(false)} disabled={saving} className="rl-btn-ghost text-sm px-5 py-2.5">Save draft</button>
-        <button onClick={() => save(true)}  disabled={saving} className="rl-btn-primary text-sm px-5 py-2.5">
+        <button onClick={() => save(false)} disabled={saving || uploading} className="rl-btn-ghost text-sm px-5 py-2.5">Save draft</button>
+        <button onClick={() => save(true)}  disabled={saving || uploading} className="rl-btn-primary text-sm px-5 py-2.5">
           {saving ? 'Saving…' : post?.status === 'published' ? 'Update' : 'Publish'}
         </button>
       </div>
