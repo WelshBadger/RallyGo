@@ -12,6 +12,7 @@ import OrganizerDashboard from './pages/OrganizerDashboard'
 import CreateEventPage from './pages/CreateEventPage'
 import ManageEventPage from './pages/ManageEventPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
+import AdminPage from './pages/AdminPage'
 
 function ProtectedOrganiser({ children }) {
   const { user, profile, loading } = useAuth()
@@ -55,6 +56,9 @@ export default function App() {
         } />
         <Route path="/organiser/event/:rallyId" element={
           <ProtectedOrganiser><ManageEventPage /></ProtectedOrganiser>
+        } />
+        <Route path="/admin" element={
+          <ProtectedOrganiser><AdminPage /></ProtectedOrganiser>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

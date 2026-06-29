@@ -69,6 +69,9 @@ export default function Navbar() {
             {isOrganiser && (
               <NavLink to="/organiser" active={isActive('/organiser')}>Dashboard</NavLink>
             )}
+            {isOrganiser && (
+              <NavLink to="/admin" active={isActive('/admin')}>Admin</NavLink>
+            )}
           </div>
 
           {/* Desktop right */}
@@ -158,6 +161,13 @@ export default function Navbar() {
                     <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1" />
                   </svg>
                 }>Dashboard</MobileNavLink>
+              )}
+              {isOrganiser && (
+                <MobileNavLink to="/admin" active={isActive('/admin')} onClick={() => setMenuOpen(false)} icon={
+                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 2a1 1 0 011 1v1.5h2.5a1 1 0 011 1v8a1 1 0 01-1 1H4.5a1 1 0 01-1-1v-8a1 1 0 011-1H7V3a1 1 0 011-1zM6 7h4M6 10h2" />
+                  </svg>
+                }>Admin</MobileNavLink>
               )}
             </div>
 
