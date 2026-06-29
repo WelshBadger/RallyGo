@@ -30,8 +30,10 @@ export default function ManageEventPage() {
   const [fiFile, setFiFile] = useState(null)
   const [fiUploading, setFiUploading] = useState(false)
   const [fiExtracting, setFiExtracting] = useState(false)
+  const [entryMode, setEntryMode] = useState('url') // url | pdf | csv
+  const [entryUrl, setEntryUrl] = useState('')
   const [entryFile, setEntryFile] = useState(null)
-  const [entryUploading, setEntryUploading] = useState(false)
+  const [entryProcessing, setEntryProcessing] = useState(false)
   const [entryPreview, setEntryPreview] = useState(null)
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [savingUrl, setSavingUrl] = useState(false)
@@ -189,7 +191,6 @@ export default function ManageEventPage() {
     const lines = text.trim().split(/\r?\n/)
     if (lines.length < 2) throw new Error('CSV must have a header row and at least one entry')
     const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase())
-    // Map common header variants to standard keys
     const MAP = {
       car: ['car', 'car no', 'car number', 'no', 'number', '#'],
       driver: ['driver', 'driver name', 'driver 1'],
@@ -199,20 +200,17 @@ export default function ManageEventPage() {
       club: ['club', 'team', 'entrant'],
       nationality: ['nationality', 'nat', 'nation', 'country'],
     }
-    function findCol(key) {
-      const variants = MAP[key]
-      return headers.findIndex(h => variants.some(v => h.includes(v)))
-    }
+    function findCol(key) { return headers.findIndex(h => MAP[key].some(v => h.includes(v))) }
     const cols = { car: findCol('car'), driver: findCol('driver'), codriver: findCol('codriver'), class: findCol('class'), vehicle: findCol('vehicle'), club: findCol('club'), nationality: findCol('nationality') }
     return lines.slice(1).filter(l => l.trim()).map(line => {
       const cells = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
       return {
-        car:     cols.car >= 0     ? cells[cols.car]     : '',
-        driver:  cols.driver >= 0  ? cells[cols.driver]  : '',
+        car: cols.car >= 0 ? cells[cols.car] : '',
+        driver: cols.driver >= 0 ? cells[cols.driver] : '',
         codriver: cols.codriver >= 0 ? cells[cols.codriver] : '',
-        class:   cols.class >= 0   ? cells[cols.class]   : '',
+        class: cols.class >= 0 ? cells[cols.class] : '',
         vehicle: cols.vehicle >= 0 ? cells[cols.vehicle] : '',
-        club:    cols.club >= 0    ? cells[cols.club]    : '',
+        club: cols.club >= 0 ? cells[cols.club] : '',
         nationality: cols.nationality >= 0 ? cells[cols.nationality] : '',
       }
     }).filter(e => e.car || e.driver)
@@ -222,29 +220,75 @@ export default function ManageEventPage() {
     const file = e.target.files[0]
     if (!file) return
     setEntryFile(file)
-    const reader = new FileReader()
-    reader.onload = ev => {
-      try {
-        const entries = parseCSV(ev.target.result)
-        setEntryPreview(entries)
-      } catch (err) {
-        toast.error(err.message)
-        setEntryPreview(null)
+    if (entryMode === 'csv') {
+      const reader = new FileReader()
+      reader.onload = ev => {
+        try { setEntryPreview(parseCSV(ev.target.result)) }
+        catch (err) { toast.error(err.message); setEntryPreview(null) }
       }
+      reader.readAsText(file)
     }
-    reader.readAsText(file)
   }
 
-  async function handleEntryUpload(e) {
+  async function callExtractFunction(body) {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-entry-list`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ rallyId, ...body }),
+      }
+    )
+    const result = await res.json()
+    if (!res.ok) throw new Error(result.error || 'Extraction failed')
+    return result.data
+  }
+
+  async function handleEntryExtract(e) {
     e.preventDefault()
-    if (!entryPreview?.length) return toast.error('No valid entries parsed')
-    setEntryUploading(true)
+    setEntryProcessing(true)
+    setEntryPreview(null)
+    try {
+      let entries
+      if (entryMode === 'url') {
+        if (!entryUrl.trim()) { toast.error('Enter a URL'); return }
+        entries = await callExtractFunction({ url: entryUrl.trim() })
+      } else if (entryMode === 'pdf') {
+        if (!entryFile) { toast.error('Select a PDF'); return }
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result.split(',')[1])
+          reader.onerror = reject
+          reader.readAsDataURL(entryFile)
+        })
+        entries = await callExtractFunction({ pdfBase64: base64 })
+      } else {
+        // CSV — already parsed into entryPreview, just save
+        if (!entryPreview?.length) { toast.error('No entries parsed'); return }
+        entries = entryPreview
+      }
+      setEntryPreview(entries)
+      toast.success(`${entries.length} entries extracted — review below`)
+    } catch (err) {
+      toast.error(err.message || 'Extraction failed')
+    } finally {
+      setEntryProcessing(false)
+    }
+  }
+
+  async function handleEntrySave() {
+    if (!entryPreview?.length) return
     const { error } = await supabase.from('rallies').update({ entry_list_data: entryPreview }).eq('id', rallyId)
-    setEntryUploading(false)
     if (error) return toast.error('Save failed')
     setRally(r => ({ ...r, entry_list_data: entryPreview }))
-    setEntryFile(null)
     setEntryPreview(null)
+    setEntryUrl('')
+    setEntryFile(null)
     toast.success(`Entry list saved — ${entryPreview.length} entries`)
   }
 
@@ -465,10 +509,10 @@ export default function ManageEventPage() {
 
       {/* Entry List card */}
       <div className="bg-rl-card border border-white/10 rounded-xl p-5 mb-5">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-white font-medium text-sm">Entry List</h2>
-            <p className="text-white/35 text-xs mt-0.5">Upload a CSV — competitors can search by car number, driver, class and vehicle.</p>
+            <p className="text-white/35 text-xs mt-0.5">Paste a URL, upload a PDF, or upload a CSV — entries are extracted automatically.</p>
           </div>
           {rally.entry_list_data?.length > 0 && (
             <div className="flex items-center gap-3 flex-shrink-0">
@@ -478,9 +522,10 @@ export default function ManageEventPage() {
           )}
         </div>
 
-        {rally.entry_list_data?.length > 0 && (
-          <div className="mb-3 mt-3 bg-[#0EA5A0]/5 border border-[#0EA5A0]/20 rounded-lg overflow-hidden">
-            <div className="overflow-x-auto max-h-48">
+        {/* Current entries preview */}
+        {rally.entry_list_data?.length > 0 && !entryPreview && (
+          <div className="mb-4 bg-[#0EA5A0]/5 border border-[#0EA5A0]/20 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto max-h-40">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/3">
@@ -492,7 +537,7 @@ export default function ManageEventPage() {
                 <tbody className="divide-y divide-white/5">
                   {rally.entry_list_data.slice(0, 5).map((e, i) => (
                     <tr key={i}>
-                      <td className="px-3 py-2 text-white font-medium">{e.car}</td>
+                      <td className="px-3 py-2 text-[#0EA5A0] font-bold">{e.car}</td>
                       <td className="px-3 py-2 text-white/80">{e.driver}</td>
                       <td className="px-3 py-2 text-white/60">{e.codriver}</td>
                       <td className="px-3 py-2 text-white/60">{e.class}</td>
@@ -508,34 +553,78 @@ export default function ManageEventPage() {
           </div>
         )}
 
-        {entryPreview && (
-          <div className="mb-3 mt-3 border border-yellow-500/20 bg-yellow-500/5 rounded-lg px-3 py-2">
-            <p className="text-yellow-400 text-xs font-medium mb-1">{entryPreview.length} entries parsed — review before saving</p>
-            <p className="text-white/40 text-xs">{entryPreview[0]?.driver}{entryPreview[0]?.codriver ? ` / ${entryPreview[0].codriver}` : ''} · Car {entryPreview[0]?.car} · {entryPreview[0]?.class}</p>
+        {/* Mode tabs */}
+        <div className="flex gap-1 mb-4">
+          {[{ id: 'url', label: 'URL' }, { id: 'pdf', label: 'PDF' }, { id: 'csv', label: 'CSV' }].map(m => (
+            <button key={m.id} onClick={() => { setEntryMode(m.id); setEntryPreview(null); setEntryFile(null) }}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${entryMode === m.id ? 'border-rl-accent bg-rl-accent/10 text-white' : 'border-white/10 text-white/40 hover:text-white'}`}>
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleEntryExtract} className="space-y-3">
+          {entryMode === 'url' && (
+            <input
+              type="url"
+              value={entryUrl}
+              onChange={e => setEntryUrl(e.target.value)}
+              placeholder="https://www.rallyresults.co.uk/entry-list"
+              className="rl-input text-sm"
+            />
+          )}
+          {entryMode === 'pdf' && (
+            <input type="file" accept=".pdf" onChange={handleEntryFileChange}
+              className="text-xs text-white/50 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white/70 cursor-pointer" />
+          )}
+          {entryMode === 'csv' && (
+            <div>
+              <p className="text-white/25 text-[10px] mb-1.5">Flexible column matching — Car, Driver, Co-driver, Class, Vehicle, Club</p>
+              <input type="file" accept=".csv" onChange={handleEntryFileChange}
+                className="text-xs text-white/50 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white/70 cursor-pointer" />
+            </div>
+          )}
+
+          <button type="submit" disabled={entryProcessing}
+            className="rl-btn-primary text-xs flex items-center gap-2 disabled:opacity-50 py-2.5 px-4">
+            {entryProcessing && <span className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+            {entryProcessing ? (entryMode === 'csv' ? 'Parsing…' : 'Extracting…') : entryMode === 'csv' ? 'Preview entries' : 'Extract entry list'}
+          </button>
+        </form>
+
+        {/* Extracted preview */}
+        {entryPreview?.length > 0 && (
+          <div className="mt-4 border border-yellow-500/20 bg-yellow-500/5 rounded-lg overflow-hidden">
+            <div className="px-3 py-2 border-b border-yellow-500/10 flex items-center justify-between">
+              <p className="text-yellow-400 text-xs font-medium">{entryPreview.length} entries — review then save</p>
+              <button onClick={() => setEntryPreview(null)} className="text-white/30 hover:text-white text-xs">✕</button>
+            </div>
+            <div className="overflow-x-auto max-h-40">
+              <table className="w-full text-xs">
+                <thead><tr className="border-b border-white/8">
+                  {['#', 'Driver', 'Co-driver', 'Class', 'Vehicle'].map(h => <th key={h} className="text-left px-3 py-2 text-white/30 font-medium">{h}</th>)}
+                </tr></thead>
+                <tbody className="divide-y divide-white/5">
+                  {entryPreview.slice(0, 6).map((e, i) => (
+                    <tr key={i}>
+                      <td className="px-3 py-1.5 text-[#0EA5A0] font-bold">{e.car}</td>
+                      <td className="px-3 py-1.5 text-white/80">{e.driver}</td>
+                      <td className="px-3 py-1.5 text-white/60">{e.codriver}</td>
+                      <td className="px-3 py-1.5 text-white/60">{e.class}</td>
+                      <td className="px-3 py-1.5 text-white/60">{e.vehicle}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {entryPreview.length > 6 && <p className="text-white/25 text-xs px-3 py-2 border-t border-white/8">+{entryPreview.length - 6} more</p>}
+            <div className="px-3 py-3 border-t border-yellow-500/10">
+              <button onClick={handleEntrySave} className="rl-btn-primary text-xs py-2 px-4">
+                Save {entryPreview.length} entries to entry list
+              </button>
+            </div>
           </div>
         )}
-
-        <form onSubmit={handleEntryUpload} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-3">
-          <div className="flex-1">
-            <p className="text-white/25 text-[10px] mb-1.5">CSV headers: Car, Driver, Co-driver, Class, Vehicle, Club (column names are flexible)</p>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleEntryFileChange}
-              className="text-xs text-white/50 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white/70 cursor-pointer"
-            />
-          </div>
-          {entryPreview?.length > 0 && (
-            <button
-              type="submit"
-              disabled={entryUploading}
-              className="rl-btn-primary text-xs flex-shrink-0 flex items-center gap-2 disabled:opacity-50 py-2.5 px-4"
-            >
-              {entryUploading && <span className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
-              {entryUploading ? 'Saving…' : `Save ${entryPreview.length} entries`}
-            </button>
-          )}
-        </form>
       </div>
 
       {/* Section tabs — horizontal scroll on mobile, vertical sidebar on desktop */}
