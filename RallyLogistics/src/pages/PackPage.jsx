@@ -774,7 +774,131 @@ function pinUrl(type, value) {
   return value // apple maps URL as-is
 }
 
+const LOCATION_FIELDS = [
+  { key: 'hotel',       label: 'Accommodation' },
+  { key: 'hq',          label: 'HQ / start' },
+  { key: 'servicepark', label: 'Service park' },
+  { key: 'refuel',      label: 'Refuel' },
+  { key: 'noise',       label: 'Noise / scrutineering' },
+  { key: 'trailerpark', label: 'Trailer park' },
+  { key: 'hospital',    label: 'Nearest hospital' },
+]
+
 function PinBadge({ type, value }) {
   if (!value) return null
   const url = pinUrl(type, value)
-  const labels = { pos
+  const labels = {
+    postcode: 'Postcode',
+    w3w: '///w3w',
+    apple: 'Maps',
+  }
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full no-underline"
+      style={{ background: 'rgba(6,182,212,0.12)', color: '#06b6d4', border: '1px solid rgba(6,182,212,0.25)' }}>
+      <svg viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
+        <path fillRule="evenodd" d="M11.854 8.354a.5.5 0 000-.708l-3-3a.5.5 0 10-.708.708L10.293 7.5H1.5a.5.5 0 000 1h8.793l-2.147 2.146a.5.5 0 00.708.708l3-3z" clipRule="evenodd"/>
+      </svg>
+      {labels[type] || type} · {value}
+    </a>
+  )
+}
+
+function LocationsTab({ pack, fi, rally, onSave }) {
+  const rawLocs = pack?.locations || {}
+  const [locs, setLocs] = useState(() => {
+    if (typeof rawLocs === 'string') return {}
+    return rawLocs
+  })
+  const [editing, setEditing] = useState(null) // key being edited
+  const [draft, setDraft] = useState({ type: 'postcode', value: '' })
+  const [dirty, setDirty] = useState(false)
+
+  function openEdit(key) {
+    const existing = locs[key] || {}
+    setDraft({ type: existing.type || 'postcode', value: existing.value || '' })
+    setEditing(key)
+  }
+
+  function savePin(key) {
+    const next = { ...locs, [key]: { type: draft.type, value: draft.value.trim() } }
+    if (!draft.value.trim()) {
+      delete next[key]
+    }
+    setLocs(next)
+    setEditing(null)
+    onSave({ locations: next })
+  }
+
+  function removePin(key) {
+    const next = { ...locs }
+    delete next[key]
+    setLocs(next)
+    onSave({ locations: next })
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <h2 className="text-white font-medium">Locations</h2>
+        <p className="text-white/35 text-xs mt-0.5">Add map pins — tap any to open in Maps</p>
+      </div>
+
+      {LOCATION_FIELDS.map(({ key, label }) => {
+        const pin = locs[key]
+        const isEditing = editing === key
+
+        return (
+          <div key={key} className="bg-rl-card border border-white/10 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-white/70 text-sm font-medium">{label}</p>
+              <div className="flex items-center gap-2">
+                {pin && !isEditing && (
+                  <button onClick={() => removePin(key)}
+                    className="text-white/20 hover:text-red-400 text-xs transition-colors">Remove</button>
+                )}
+                {!isEditing && (
+                  <button onClick={() => openEdit(key)}
+                    className="text-rl-accent hover:text-white text-xs transition-colors">
+                    {pin ? 'Edit' : '+ Add pin'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {pin && !isEditing && <PinBadge type={pin.type} value={pin.value} />}
+
+            {isEditing && (
+              <div className="space-y-3 mt-2">
+                <div className="flex gap-2">
+                  {PIN_TYPES.map(pt => (
+                    <button key={pt.id}
+                      onClick={() => setDraft(d => ({ ...d, type: pt.id }))}
+                      className={`flex-1 py-1.5 rounded-lg text-xs border transition-all ${
+                        draft.type === pt.id
+                          ? 'bg-rl-accent/15 border-rl-accent/40 text-rl-accent'
+                          : 'bg-white/5 border-white/10 text-white/40 hover:text-white/70'
+                      }`}>
+                      {pt.label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  value={draft.value}
+                  onChange={e => setDraft(d => ({ ...d, value: e.target.value }))}
+                  placeholder={PIN_TYPES.find(p => p.id === draft.type)?.placeholder}
+                  className="rl-input text-sm w-full"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => savePin(key)} className="rl-btn-primary text-xs flex-1 justify-center">Save</button>
+                  <button onClick={() => setEditing(null)} className="rl-btn-ghost text-xs px-4">Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}

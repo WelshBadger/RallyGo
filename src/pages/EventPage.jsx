@@ -122,7 +122,7 @@ export default function EventPage() {
           <div className="flex items-center justify-between py-3 border-t border-white/8">
             <span className="text-white/40 text-xs">Team logistics platform</span>
             <a
-              href="https://rally-logistics-ea6p2dltn-carls-projects-0baeff4c.vercel.app"
+              href="https://rally-logistics-carls-projects-0baeff4c.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-rl-accent hover:text-white transition-colors font-medium"

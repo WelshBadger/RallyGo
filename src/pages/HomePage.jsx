@@ -83,7 +83,7 @@ export default function HomePage() {
               title: 'Rally Logistics',
               body: 'Team upgrade — schedule, fuel plan, crew info and recce notes shared with your whole team.',
               accent: true,
-              href: 'https://rally-logistics-ea6p2dltn-carls-projects-0baeff4c.vercel.app',
+              href: 'https://rally-logistics-carls-projects-0baeff4c.vercel.app',
             },
           ].map(item => {
             const inner = (
