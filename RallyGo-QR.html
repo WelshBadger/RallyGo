@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RallyGo — Scan to Open</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d14;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .card {
+      background: #13131f;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      padding: 40px 36px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #e63946, #c1121f);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: white;
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.45);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 32px;
+    }
+
+    .qr-wrapper {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      display: inline-block;
+      margin-bottom: 28px;
+    }
+
+    #qrcode canvas, #qrcode img {
+      display: block;
+    }
+
+    .url-badge {
+      background: rgba(230,57,70,0.1);
+      border: 1px solid rgba(230,57,70,0.25);
+      color: rgba(255,255,255,0.6);
+      font-size: 11px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 32px;
+      word-break: break-all;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 28px;
+    }
+
+    .steps-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.25);
+      margin-bottom: 16px;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: left;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .step-num {
+      width: 22px;
+      height: 22px;
+      background: rgba(230,57,70,0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e63946;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.5;
+    }
+
+    .step-text strong {
+      color: rgba(255,255,255,0.8);
+      font-weight: 500;
+    }
+
+    .platform-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      justify-content: center;
+    }
+
+    .tab-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.45);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab-btn.active {
+      background: rgba(230,57,70,0.12);
+      border-color: rgba(230,57,70,0.3);
+      color: #e63946;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <span class="logo-text">RallyGo</span>
+    </div>
+
+    <h1>Scan to open</h1>
+    <p class="subtitle">UK rally motorsport — documents,<br>live updates and event info.</p>
+
+    <div class="qr-wrapper">
+      <div id="qrcode"></div>
+    </div>
+
+    <div class="url-badge">rallygo-git-main-carls-projects-0baeff4c.vercel.app</div>
+
+    <hr class="divider" />
+
+    <p class="steps-title">Add to your home screen</p>
+
+    <div class="platform-tabs">
+      <button class="tab-btn active" onclick="showSteps('ios')">iPhone</button>
+      <button class="tab-btn" onclick="showSteps('android')">Android</button>
+    </div>
+
+    <div class="steps" id="ios-steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Scan the QR code — it opens in <strong>Safari</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Tap the <strong>Share</strong> button at the bottom of the screen</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Scroll down and tap <strong>"Add to Home Screen"</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">Tap <strong>Add</strong> — RallyGo appears on your home screen</div>
+      </div>
+    </div>
+
+    <div class="steps" id="android-steps" style="display:none">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Scan the QR code — it opens in <strong>Chrome</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Tap the <strong>⋮ menu</strong> in the top-right corner</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Tap <strong>"Add to Home screen"</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">Tap <strong>Add</strong> — RallyGo appears on your home screen</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    new QRCode(document.getElementById('qrcode'), {
+      text: 'https://rallygo-git-main-carls-projects-0baeff4c.vercel.app',
+      width: 220,
+      height: 220,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    })
+
+    function showSteps(platform) {
+      document.getElementById('ios-steps').style.display = platform === 'ios' ? 'flex' : 'none'
+      document.getElementById('android-steps').style.display = platform === 'android' ? 'flex' : 'none'
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', (i === 0 && platform === 'ios') || (i === 1 && platform === 'android'))
+      })
+    }
+  </script>
+</body>
+</html>

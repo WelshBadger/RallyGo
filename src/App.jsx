@@ -13,6 +13,7 @@ import CreateEventPage from './pages/CreateEventPage'
 import ManageEventPage from './pages/ManageEventPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import AdminPage from './pages/AdminPage'
+import NewsPage from './pages/NewsPage'
 
 function ProtectedOrganiser({ children }) {
   const { user, profile, loading } = useAuth()
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/event/:rallyId" element={<EventPage />} />
         <Route path="/event/:rallyId/:section" element={<ProtectedRoute><SectionPage /></ProtectedRoute>} />
+        <Route path="/news/:id" element={<NewsPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/organiser" element={
           <ProtectedOrganiser><OrganizerDashboard /></ProtectedOrganiser>

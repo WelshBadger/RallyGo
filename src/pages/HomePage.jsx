@@ -156,9 +156,9 @@ function NewsCard({ post, featured }) {
 
   if (featured) {
     return (
-      <div className="bg-white/3 border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all">
+      <Link to={`/news/${post.id}`} className="block bg-white/3 border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all no-underline">
         {post.image_url ? (
-          <img src={post.image_url} alt={post.title} className="w-full h-52 sm:h-64 object-cover" />
+          <img src={post.image_url} alt={post.title} className="w-full h-52 sm:h-64 object-contain bg-black/20" />
         ) : (
           <div className="h-0.5 w-full bg-gradient-to-r from-rl-accent via-rl-accent/50 to-transparent" />
         )}
@@ -168,15 +168,15 @@ function NewsCard({ post, featured }) {
           {post.excerpt && <p className="text-white/45 text-sm leading-relaxed mb-4">{post.excerpt}</p>}
           <p className="text-white/35 text-sm leading-relaxed line-clamp-3">{post.body}</p>
         </div>
-      </div>
+      </Link>
     )
   }
 
   return (
-    <div className="bg-white/3 border border-white/8 rounded-xl overflow-hidden hover:border-white/18 transition-all">
+    <Link to={`/news/${post.id}`} className="block bg-white/3 border border-white/8 rounded-xl overflow-hidden hover:border-white/18 transition-all no-underline">
       <div className="flex items-stretch gap-0">
         {post.image_url && (
-          <img src={post.image_url} alt={post.title} className="w-24 sm:w-32 object-cover flex-shrink-0" />
+          <img src={post.image_url} alt={post.title} className="w-24 sm:w-32 object-contain bg-black/20 flex-shrink-0" />
         )}
         <div className="flex-1 min-w-0 px-5 py-4">
           {date && <p className="text-white/25 text-xs mb-1">{date}</p>}
@@ -184,7 +184,7 @@ function NewsCard({ post, featured }) {
           {post.excerpt && <p className="text-white/40 text-xs mt-1 line-clamp-2">{post.excerpt}</p>}
         </div>
       </div>
-    </div>
+    </Link>
   )
 }
 
