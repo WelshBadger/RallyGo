@@ -83,16 +83,23 @@ export default function HomePage() {
               title: 'Rally Logistics',
               body: 'Team upgrade — schedule, fuel plan, crew info and recce notes shared with your whole team.',
               accent: true,
+              href: 'https://rally-logistics-ea6p2dltn-carls-projects-0baeff4c.vercel.app',
             },
-          ].map(item => (
-            <div key={item.title} className={`border rounded-xl p-4 sm:p-5 ${item.accent ? 'bg-rl-accent/5 border-rl-accent/25' : 'bg-white/3 border-white/8'}`}>
-              <div className="w-9 h-9 rounded-lg bg-rl-accent/10 border border-rl-accent/20 flex items-center justify-center text-rl-accent mb-4">
-                {item.icon}
-              </div>
-              <h3 className={`font-medium text-sm mb-1.5 ${item.accent ? 'text-rl-accent' : 'text-white'}`}>{item.title}</h3>
-              <p className="text-white/40 text-xs leading-relaxed">{item.body}</p>
-            </div>
-          ))}
+          ].map(item => {
+            const inner = (
+              <>
+                <div className="w-9 h-9 rounded-lg bg-rl-accent/10 border border-rl-accent/20 flex items-center justify-center text-rl-accent mb-4">
+                  {item.icon}
+                </div>
+                <h3 className={`font-medium text-sm mb-1.5 ${item.accent ? 'text-rl-accent' : 'text-white'}`}>{item.title}</h3>
+                <p className="text-white/40 text-xs leading-relaxed">{item.body}</p>
+              </>
+            )
+            const cls = `border rounded-xl p-4 sm:p-5 ${item.accent ? 'bg-rl-accent/5 border-rl-accent/25 hover:bg-rl-accent/8 transition-colors' : 'bg-white/3 border-white/8'}`
+            return item.href
+              ? <a key={item.title} href={item.href} target="_blank" rel="noopener noreferrer" className={`${cls} block no-underline`}>{inner}</a>
+              : <div key={item.title} className={cls}>{inner}</div>
+          })}
         </div>
 
         <div className="mt-5 flex items-center gap-3">
