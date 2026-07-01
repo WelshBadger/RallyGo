@@ -27,7 +27,7 @@ export default function HomePage() {
   useEffect(() => {
     async function load() {
       const [{ data: newsData }, { data: rallyData }] = await Promise.all([
-        supabase.from('news_posts').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(3),
+        supabase.from('news_posts').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(1),
         supabase.from('rallies').select('*').eq('status', 'active').order('date', { ascending: true }),
       ])
       setNews(newsData || [])
@@ -110,25 +110,22 @@ export default function HomePage() {
 
       {/* ── News section ── */}
       <section>
-        <div className="flex items-center gap-2 mb-5">
-          <span className="w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />
-          <span className="text-rl-accent text-[11px] font-semibold uppercase tracking-widest">Latest news</span>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />
+            <span className="text-rl-accent text-[11px] font-semibold uppercase tracking-widest">Latest news</span>
+          </div>
+          <Link to="/news" className="text-white/40 hover:text-white text-xs transition-colors no-underline">All posts →</Link>
         </div>
 
         {loading ? (
-          <div className="space-y-3">
-            <div className="h-32 bg-white/5 rounded-2xl animate-pulse" />
-            <div className="h-20 bg-white/5 rounded-xl animate-pulse" />
-          </div>
+          <div className="h-32 bg-white/5 rounded-2xl animate-pulse" />
         ) : news.length === 0 ? (
           <div className="bg-white/3 border border-white/8 rounded-2xl p-8 text-center">
             <p className="text-white/30 text-sm">No news yet — check back soon.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            <NewsCard post={news[0]} featured />
-            {news.slice(1).map(post => <NewsCard key={post.id} post={post} />)}
-          </div>
+          <NewsCard post={news[0]} featured />
         )}
       </section>
 
@@ -156,7 +153,7 @@ function NewsCard({ post, featured }) {
 
   if (featured) {
     return (
-      <Link to={`/news/${post.id}`} className="block bg-white/3 border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all no-underline">
+      <Link to="/news" className="block bg-white/3 border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all no-underline">
         {post.image_url ? (
           <img src={post.image_url} alt={post.title} className="w-full h-52 sm:h-64 object-contain bg-black/20" />
         ) : (
