@@ -4,10 +4,12 @@ import { supabase } from '../lib/supabase'
 import { formatDateRange } from '../lib/dateUtils'
 
 const SURFACE = {
-  gravel:     { bg: 'bg-amber-500',   light: 'bg-amber-500/15',  border: 'border-amber-500/40',  text: 'text-amber-300',   dot: 'bg-amber-400',   label: 'Gravel' },
-  tarmac:     { bg: 'bg-blue-500',    light: 'bg-blue-500/15',   border: 'border-blue-500/40',   text: 'text-blue-300',    dot: 'bg-blue-400',    label: 'Tarmac' },
-  closed_road:{ bg: 'bg-violet-500',  light: 'bg-violet-500/15', border: 'border-violet-500/40', text: 'text-violet-300',  dot: 'bg-violet-400',  label: 'Closed Road' },
-  mixed:      { bg: 'bg-white/30',    light: 'bg-white/5',       border: 'border-white/20',      text: 'text-white/50',    dot: 'bg-white/40',    label: 'Mixed' },
+  gravel:     { bg: 'bg-amber-500',   light: 'bg-amber-500/15',  border: 'border-amber-500/40',  text: 'text-amber-300',   dot: 'bg-amber-400',   label: 'Gravel Rally' },
+  tarmac:     { bg: 'bg-blue-500',    light: 'bg-blue-500/15',   border: 'border-blue-500/40',   text: 'text-blue-300',    dot: 'bg-blue-400',    label: 'Tarmac Rally' },
+  road_rally: { bg: 'bg-violet-500',  light: 'bg-violet-500/15', border: 'border-violet-500/40', text: 'text-violet-300',  dot: 'bg-violet-400',  label: 'Road Rally' },
+  // legacy surface values — kept for backwards compatibility
+  closed_road:{ bg: 'bg-violet-500',  light: 'bg-violet-500/15', border: 'border-violet-500/40', text: 'text-violet-300',  dot: 'bg-violet-400',  label: 'Road Rally' },
+  mixed:      { bg: 'bg-amber-500',   light: 'bg-amber-500/15',  border: 'border-amber-500/40',  text: 'text-amber-300',   dot: 'bg-amber-400',   label: 'Gravel Rally' },
 }
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -152,13 +154,16 @@ export default function CalendarPage() {
       {/* Surface legend */}
       {!loading && (
         <div className="mt-8 flex flex-wrap gap-4 items-center">
-          <span className="text-white/20 text-xs">Surface</span>
-          {Object.entries(SURFACE).map(([key, s]) => (
-            <span key={key} className="flex items-center gap-1.5 text-xs text-white/35">
-              <span className={`w-2 h-2 rounded-full ${s.dot}`} />
-              {s.label}
-            </span>
-          ))}
+          <span className="text-white/20 text-xs">Classification</span>
+          {['gravel', 'tarmac', 'road_rally'].map(key => {
+            const s = SURFACE[key]
+            return (
+              <span key={key} className="flex items-center gap-1.5 text-xs text-white/35">
+                <span className={`w-2 h-2 rounded-full ${s.dot}`} />
+                {s.label}
+              </span>
+            )
+          })}
         </div>
       )}
 

@@ -26,9 +26,10 @@ export default function HomePage() {
 
   useEffect(() => {
     async function load() {
+      const today = new Date().toISOString().split('T')[0]
       const [{ data: newsData }, { data: rallyData }] = await Promise.all([
         supabase.from('news_posts').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(1),
-        supabase.from('rallies').select('*').eq('status', 'active').order('date', { ascending: true }),
+        supabase.from('rallies').select('*').eq('status', 'active').gte('date', today).order('date', { ascending: true }).limit(3),
       ])
       setNews(newsData || [])
       setRallies(rallyData || [])
@@ -86,12 +87,12 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* ── Active events ── */}
+      {/* ── Next rallies ── */}
       {rallies.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />
-            <span className="text-rl-accent text-[11px] font-semibold uppercase tracking-widest">Live events</span>
+            <span className="text-rl-accent text-[11px] font-semibold uppercase tracking-widest">Next rallies</span>
           </div>
           <div className="space-y-3">
             {rallies.map((rally, i) =>
@@ -143,7 +144,6 @@ function NewsCard({ post, featured }) {
 }
 
 function FeaturedCard({ rally }) {
-  const isPast = new Date(rally.end_date || rally.date) < new Date()
   const countdown = daysUntil(rally.date)
   const stages = rally.regulations_data?.stages?.length || rally.regulations_data?.stageCount
   const distance = rally.regulations_data?.totalStageDistance
@@ -157,13 +157,8 @@ function FeaturedCard({ rally }) {
       <div className="h-0.5 w-full bg-gradient-to-r from-rl-accent via-rl-accent/50 to-transparent" />
       <div className="p-5 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
-          {!isPast && (
-            <span className="flex items-center gap-1.5 text-[10px] font-semibold text-rl-accent bg-rl-accent/10 border border-rl-accent/20 px-2.5 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />Live
-            </span>
-          )}
           {rally.series && <span className="text-[10px] text-white/40 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">{rally.series}</span>}
-          {countdown && !isPast && <span className="text-[10px] text-white/40 ml-auto">{countdown}</span>}
+          {countdown && <span className="text-[10px] text-white/40 ml-auto">{countdown}</span>}
         </div>
         <h2 className="text-white font-semibold text-2xl sm:text-3xl leading-tight mb-1">{rally.name}</h2>
         <p className="text-white/45 text-sm mb-5">
@@ -199,9 +194,6 @@ function RallyCard({ rally }) {
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="flex items-center gap-1 text-[10px] font-semibold text-rl-accent">
-              <span className="w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />Live
-            </span>
             {rally.series && <span className="text-white/30 text-xs">{rally.series}</span>}
             {countdown && <span className="text-white/20 text-[10px] ml-auto">{countdown}</span>}
           </div>
