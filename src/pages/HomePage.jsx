@@ -29,7 +29,10 @@ export default function HomePage() {
       const today = new Date().toISOString().split('T')[0]
       const [{ data: newsData }, { data: rallyData }] = await Promise.all([
         supabase.from('news_posts').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(1),
-        supabase.from('rallies').select('*').eq('status', 'active').gte('date', today).order('date', { ascending: true }).limit(3),
+        // Show rallies that haven't fully ended yet (use end_date if set, else date)
+        supabase.from('rallies').select('*').eq('status', 'active')
+          .or(`end_date.gte.${today},and(end_date.is.null,date.gte.${today})`)
+          .order('date', { ascending: true }).limit(3),
       ])
       setNews(newsData || [])
       setRallies(rallyData || [])
