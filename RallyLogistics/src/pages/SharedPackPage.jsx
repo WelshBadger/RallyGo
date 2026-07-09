@@ -7,8 +7,10 @@ const TABS = [
   { id: 'schedule',  label: 'Schedule' },
   { id: 'stages',    label: 'Stages' },
   { id: 'pre-event', label: 'Pre-event' },
+  { id: 'locations', label: 'Locations' },
   { id: 'fuel',      label: 'Fuel' },
   { id: 'recce',     label: 'Recce' },
+  { id: 'car-setup', label: 'Car set-up' },
 ]
 
 export default function SharedPackPage() {
@@ -60,12 +62,14 @@ export default function SharedPackPage() {
         ))}
       </div>
 
-      {tab === 'team' && <SharedTeam members={pack.team_members || []} />}
-      {tab === 'schedule' && <SharedSchedule pack={pack} fi={fi} />}
-      {tab === 'stages' && <SharedStages pack={pack} stages={stages} />}
+      {tab === 'team'      && <SharedTeam members={pack.team_members || []} />}
+      {tab === 'schedule'  && <SharedSchedule pack={pack} fi={fi} />}
+      {tab === 'stages'    && <SharedStages pack={pack} stages={stages} />}
       {tab === 'pre-event' && <SharedPreEvent fi={fi} rally={rally} />}
-      {tab === 'fuel' && <SharedFuel rows={pack.fuel_schedule || []} />}
-      {tab === 'recce' && <SharedRecce notes={pack.recce_notes || {}} stages={stages} />}
+      {tab === 'locations' && <SharedLocations locations={pack.locations || {}} />}
+      {tab === 'fuel'      && <SharedFuel rows={pack.fuel_schedule || []} />}
+      {tab === 'recce'     && <SharedRecce notes={pack.recce_notes || {}} stages={stages} />}
+      {tab === 'car-setup' && <SharedCarSetup images={pack.setup_sheet_urls || []} changes={pack.setup_changes || ''} />}
     </main>
   )
 }
@@ -224,6 +228,89 @@ function SharedRecce({ notes, stages }) {
           {notes[s.number] ? <p className="text-white/60 text-sm">{notes[s.number]}</p> : <p className="text-white/20 text-xs italic">No notes</p>}
         </div>
       ))}
+    </div>
+  )
+}
+
+const LOCATION_LABELS = {
+  hotel: 'Accommodation', hq: 'HQ / start', servicepark: 'Service park',
+  refuel: 'Refuel', noise: 'Noise / scrutineering', trailerpark: 'Trailer park', hospital: 'Nearest hospital',
+}
+
+function pinUrl(type, value) {
+  if (!value) return null
+  if (type === 'postcode') return `https://maps.apple.com/?q=${encodeURIComponent(value)}`
+  if (type === 'w3w') return `https://what3words.com/${value.replace(/^\/\/\//, '')}`
+  return value
+}
+
+function SharedLocations({ locations }) {
+  const fields = Object.entries(LOCATION_LABELS)
+  const hasAny = fields.some(([k]) => locations[k]?.text || locations[k]?.pin)
+  if (!hasAny) return <p className="text-white/30 text-sm">No locations added yet.</p>
+  return (
+    <div className="space-y-3">
+      {fields.map(([key, label]) => {
+        const entry = locations[key]
+        if (!entry?.text && !entry?.pin) return null
+        const url = entry.pinType && entry.pin ? pinUrl(entry.pinType, entry.pin) : null
+        return (
+          <div key={key} className="bg-rl-card border border-white/10 rounded-xl px-4 py-3.5 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-white/40 text-xs mb-0.5">{label}</p>
+              <p className="text-white text-sm font-medium">{entry.text || entry.pin}</p>
+            </div>
+            {url && (
+              <a href={url} target="_blank" rel="noopener noreferrer"
+                className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 no-underline hover:bg-cyan-500/20 transition-colors">
+                Map →
+              </a>
+            )}
+          </div>
+        )
+      })}
+      {locations.notes && (
+        <div className="bg-rl-card border border-white/10 rounded-xl px-4 py-3.5">
+          <p className="text-white/40 text-xs mb-1">Notes</p>
+          <p className="text-white/70 text-sm">{locations.notes}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SharedCarSetup({ images, changes }) {
+  const [lightbox, setLightbox] = useState(null)
+  if (!images.length && !changes) return <p className="text-white/30 text-sm">No setup info yet.</p>
+  return (
+    <div className="space-y-5">
+      {images.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-white/50 text-xs uppercase tracking-widest font-semibold">Setup sheet</p>
+          <div className="grid grid-cols-2 gap-3">
+            {images.map((url, i) => (
+              <button key={i} onClick={() => setLightbox(url)} className="w-full">
+                <img src={url} alt={`Setup sheet ${i + 1}`}
+                  className="w-full aspect-[3/4] object-cover rounded-xl border border-white/10" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {changes && (
+        <div className="space-y-2">
+          <p className="text-white/50 text-xs uppercase tracking-widest font-semibold">Changes during rally</p>
+          <div className="bg-rl-card border border-white/10 rounded-xl px-4 py-3.5">
+            <pre className="text-white/70 text-sm whitespace-pre-wrap font-sans">{changes}</pre>
+          </div>
+        </div>
+      )}
+      {lightbox && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt="Setup sheet" className="max-w-full max-h-full rounded-xl object-contain" />
+          <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-lg">✕</button>
+        </div>
+      )}
     </div>
   )
 }

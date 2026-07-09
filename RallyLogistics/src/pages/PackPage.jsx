@@ -37,6 +37,10 @@ const SECTIONS = [
     id: 'recce', label: 'Recce', color: '#ec4899', desc: 'Notes from reconnaissance',
     icon: <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/></svg>
   },
+  {
+    id: 'car-setup', label: 'Car set-up', color: '#a78bfa', desc: 'Setup sheet & changes during rally',
+    icon: <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7"><path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/></svg>
+  },
 ]
 
 function fmt(d) {
@@ -192,14 +196,16 @@ export default function PackPage() {
         <>
           <button
             onClick={() => setTab(null)}
-            className="w-full flex items-center gap-3 px-4 py-3 mb-5 bg-white/5 hover:bg-white/8 border border-white/10 hover:border-white/20 rounded-xl transition-all text-left group"
+            className="w-full flex items-center gap-3 px-4 py-4 mb-5 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/35 rounded-2xl transition-all text-left active:scale-[0.98]"
           >
-            <svg className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
-              <path fillRule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z" clipRule="evenodd" />
-            </svg>
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-white" viewBox="0 0 16 16" fill="currentColor">
+                <path fillRule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z" clipRule="evenodd" />
+              </svg>
+            </div>
             <div>
-              <p className="text-white/35 text-[10px] uppercase tracking-widest font-medium">Back to</p>
-              <p className="text-white/80 text-sm font-medium leading-tight">{rally.name} overview</p>
+              <p className="text-white/50 text-xs font-medium">Back to overview</p>
+              <p className="text-white font-semibold text-base leading-tight">{rally.name}</p>
             </div>
           </button>
           {(() => {
@@ -222,6 +228,7 @@ export default function PackPage() {
           {tab === 'locations' && <LocationsTab pack={pack} fi={fi} rally={rally} onSave={save} />}
           {tab === 'fuel'      && <FuelTab pack={pack} onSave={save} />}
           {tab === 'recce'     && <RecceTab pack={pack} stages={stages} onSave={save} />}
+          {tab === 'car-setup' && <CarSetupTab pack={pack} rally={rally} onSave={save} />}
         </>
       )}
     </main>
@@ -787,118 +794,219 @@ const LOCATION_FIELDS = [
 function PinBadge({ type, value }) {
   if (!value) return null
   const url = pinUrl(type, value)
-  const labels = {
-    postcode: 'Postcode',
-    w3w: '///w3w',
-    apple: 'Maps',
-  }
+  const labels = { postcode: 'Map', w3w: '///w3w', apple: 'Maps' }
+  if (!url) return null
   return (
     <a href={url} target="_blank" rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full no-underline"
-      style={{ background: 'rgba(6,182,212,0.12)', color: '#06b6d4', border: '1px solid rgba(6,182,212,0.25)' }}>
-      <svg viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
-        <path fillRule="evenodd" d="M11.854 8.354a.5.5 0 000-.708l-3-3a.5.5 0 10-.708.708L10.293 7.5H1.5a.5.5 0 000 1h8.793l-2.147 2.146a.5.5 0 00.708.708l3-3z" clipRule="evenodd"/>
+      className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors no-underline flex-shrink-0">
+      <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
       </svg>
-      {labels[type] || type} · {value}
+      {labels[type] || 'Open'}
     </a>
   )
 }
 
-function LocationsTab({ pack, fi, rally, onSave }) {
-  const rawLocs = pack?.locations || {}
-  const [locs, setLocs] = useState(() => {
-    if (typeof rawLocs === 'string') return {}
-    return rawLocs
-  })
-  const [editing, setEditing] = useState(null) // key being edited
-  const [draft, setDraft] = useState({ type: 'postcode', value: '' })
+function LocationsTab({ pack, onSave }) {
+  const [locs, setLocs] = useState(() => pack?.locations || {})
   const [dirty, setDirty] = useState(false)
 
-  function openEdit(key) {
-    const existing = locs[key] || {}
-    setDraft({ type: existing.type || 'postcode', value: existing.value || '' })
-    setEditing(key)
+  function updateField(key, field, val) {
+    setLocs(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [field]: val } }))
+    setDirty(true)
   }
 
-  function savePin(key) {
-    const next = { ...locs, [key]: { type: draft.type, value: draft.value.trim() } }
-    if (!draft.value.trim()) {
-      delete next[key]
-    }
-    setLocs(next)
-    setEditing(null)
-    onSave({ locations: next })
+  function updateNotes(val) {
+    setLocs(prev => ({ ...prev, notes: val }))
+    setDirty(true)
   }
 
-  function removePin(key) {
-    const next = { ...locs }
-    delete next[key]
-    setLocs(next)
-    onSave({ locations: next })
+  function handleSave() {
+    onSave({ locations: locs })
+    setDirty(false)
   }
 
   return (
-    <div className="space-y-3">
-      <div>
-        <h2 className="text-white font-medium">Locations</h2>
-        <p className="text-white/35 text-xs mt-0.5">Add map pins — tap any to open in Maps</p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-white font-medium">Locations</h2>
+          <p className="text-white/35 text-xs mt-0.5">Postcode, what3words, or Apple Maps link</p>
+        </div>
+        {dirty && (
+          <button onClick={handleSave} className="rl-btn-primary text-xs">Save</button>
+        )}
       </div>
 
-      {LOCATION_FIELDS.map(({ key, label }) => {
-        const pin = locs[key]
-        const isEditing = editing === key
-
-        return (
-          <div key={key} className="bg-rl-card border border-white/10 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-white/70 text-sm font-medium">{label}</p>
-              <div className="flex items-center gap-2">
-                {pin && !isEditing && (
-                  <button onClick={() => removePin(key)}
-                    className="text-white/20 hover:text-red-400 text-xs transition-colors">Remove</button>
-                )}
-                {!isEditing && (
-                  <button onClick={() => openEdit(key)}
-                    className="text-rl-accent hover:text-white text-xs transition-colors">
-                    {pin ? 'Edit' : '+ Add pin'}
-                  </button>
-                )}
+      <div className="space-y-3">
+        {LOCATION_FIELDS.map(({ key, label }) => {
+          const entry = locs[key] || {}
+          return (
+            <div key={key} className="bg-rl-card border border-white/10 rounded-xl p-4 space-y-3">
+              <p className="text-white font-medium text-sm">{label}</p>
+              <div>
+                <p className="text-white/35 text-xs mb-1">Description / name</p>
+                <input
+                  value={entry.text || ''}
+                  onChange={e => updateField(key, 'text', e.target.value)}
+                  placeholder="e.g. Service Park at Castle grounds"
+                  className="rl-input text-sm w-full"
+                />
               </div>
-            </div>
-
-            {pin && !isEditing && <PinBadge type={pin.type} value={pin.value} />}
-
-            {isEditing && (
-              <div className="space-y-3 mt-2">
-                <div className="flex gap-2">
+              <div>
+                <p className="text-white/35 text-xs mb-1">Pin type</p>
+                <div className="flex gap-2 flex-wrap">
                   {PIN_TYPES.map(pt => (
-                    <button key={pt.id}
-                      onClick={() => setDraft(d => ({ ...d, type: pt.id }))}
-                      className={`flex-1 py-1.5 rounded-lg text-xs border transition-all ${
-                        draft.type === pt.id
-                          ? 'bg-rl-accent/15 border-rl-accent/40 text-rl-accent'
-                          : 'bg-white/5 border-white/10 text-white/40 hover:text-white/70'
-                      }`}>
+                    <button
+                      key={pt.id}
+                      onClick={() => updateField(key, 'pinType', entry.pinType === pt.id ? null : pt.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                        entry.pinType === pt.id
+                          ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30'
+                          : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/8'
+                      }`}
+                    >
                       {pt.label}
                     </button>
                   ))}
                 </div>
-                <input
-                  value={draft.value}
-                  onChange={e => setDraft(d => ({ ...d, value: e.target.value }))}
-                  placeholder={PIN_TYPES.find(p => p.id === draft.type)?.placeholder}
-                  className="rl-input text-sm w-full"
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <button onClick={() => savePin(key)} className="rl-btn-primary text-xs flex-1 justify-center">Save</button>
-                  <button onClick={() => setEditing(null)} className="rl-btn-ghost text-xs px-4">Cancel</button>
-                </div>
               </div>
-            )}
+              {entry.pinType && (
+                <div>
+                  <p className="text-white/35 text-xs mb-1">{PIN_TYPES.find(p => p.id === entry.pinType)?.placeholder || 'Value'}</p>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      value={entry.pin || ''}
+                      onChange={e => updateField(key, 'pin', e.target.value)}
+                      placeholder={PIN_TYPES.find(p => p.id === entry.pinType)?.placeholder || ''}
+                      className="rl-input text-sm flex-1"
+                    />
+                    <PinBadge type={entry.pinType} value={entry.pin} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="bg-rl-card border border-white/10 rounded-xl p-4 space-y-2">
+        <p className="text-white font-medium text-sm">Extra notes</p>
+        <textarea
+          value={locs.notes || ''}
+          onChange={e => updateNotes(e.target.value)}
+          placeholder="Any other location info for the team…"
+          rows={3}
+          className="rl-textarea text-sm w-full"
+        />
+      </div>
+
+      {dirty && (
+        <button onClick={handleSave} className="rl-btn-primary w-full justify-center">Save locations</button>
+      )}
+    </div>
+  )
+}
+
+// ─── Car Setup Tab ────────────────────────────────────────────────────────────
+
+function CarSetupTab({ pack, rally, onSave }) {
+  const [images, setImages] = useState(() => pack?.setup_sheet_urls || [])
+  const [changes, setChanges] = useState(() => pack?.setup_changes || '')
+  const [uploading, setUploading] = useState(false)
+  const [lightbox, setLightbox] = useState(null)
+  const [dirty, setDirty] = useState(false)
+
+  async function handleUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const ext = file.name.split('.').pop()
+    const path = `setup-sheets/${rally.id}/${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('rally-docs').upload(path, file, { upsert: true })
+    if (error) { toast.error('Upload failed'); setUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
+    const next = [...images, publicUrl]
+    setImages(next)
+    onSave({ setup_sheet_urls: next })
+    setUploading(false)
+    toast.success('Setup sheet uploaded')
+  }
+
+  async function removeImage(url) {
+    const next = images.filter(u => u !== url)
+    setImages(next)
+    onSave({ setup_sheet_urls: next })
+  }
+
+  function saveChanges() {
+    onSave({ setup_changes: changes })
+    setDirty(false)
+    toast.success('Saved')
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-white font-medium">Car set-up</h2>
+        <p className="text-white/35 text-xs mt-0.5">Setup sheet photos and in-rally changes</p>
+      </div>
+
+      {/* Setup sheet images */}
+      <div className="space-y-3">
+        <p className="text-white/60 text-xs uppercase tracking-widest font-semibold">Setup sheet</p>
+
+        {images.length > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            {images.map((url, i) => (
+              <div key={i} className="relative group">
+                <button onClick={() => setLightbox(url)} className="w-full">
+                  <img src={url} alt={`Setup sheet ${i + 1}`}
+                    className="w-full aspect-[3/4] object-cover rounded-xl border border-white/10" />
+                </button>
+                <button
+                  onClick={() => removeImage(url)}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-white/60 hover:text-red-400 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >✕</button>
+              </div>
+            ))}
           </div>
-        )
-      })}
+        )}
+
+        <label className={`w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl py-6 cursor-pointer transition-all ${
+          uploading ? 'border-white/10 text-white/20' : 'border-white/15 text-white/35 hover:border-violet-400/40 hover:text-violet-300'
+        }`}>
+          <svg className="w-7 h-7" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"/>
+          </svg>
+          <span className="text-sm font-medium">{uploading ? 'Uploading…' : images.length > 0 ? 'Add another photo' : 'Upload setup sheet photo'}</span>
+          <span className="text-xs text-white/25">Tap to take a photo or choose from library</span>
+          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleUpload} disabled={uploading} />
+        </label>
+      </div>
+
+      {/* Changes during rally */}
+      <div className="space-y-2">
+        <p className="text-white/60 text-xs uppercase tracking-widest font-semibold">Changes during rally</p>
+        <textarea
+          value={changes}
+          onChange={e => { setChanges(e.target.value); setDirty(true) }}
+          placeholder="e.g. Added 1 click front ARB after SS3, softened rear dampers 2 clicks…"
+          rows={6}
+          className="rl-textarea w-full text-sm"
+        />
+        {dirty && (
+          <button onClick={saveChanges} className="rl-btn-primary w-full justify-center">Save changes</button>
+        )}
+      </div>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt="Setup sheet" className="max-w-full max-h-full rounded-xl object-contain" />
+          <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-lg">✕</button>
+        </div>
+      )}
     </div>
   )
 }
