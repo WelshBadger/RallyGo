@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatDateRange } from '../lib/dateUtils'
@@ -72,7 +72,7 @@ function groupByMonth(events) {
 export default function CalendarPage() {
   const [events, setEvents]       = useState([])
   const [loading, setLoading]     = useState(true)
-  const [view, setView]           = useState('calendar') // 'calendar' | 'list'
+  const [view, setView]           = useState('list') // 'calendar' | 'list'
   const [selected, setSelected]   = useState(null)       // event object (for detail sheet)
 
   const now = new Date()
@@ -334,25 +334,52 @@ function EventSheet({ event, onClose }) {
   )
 }
 
-// ─── List view (kept as fallback) ───────────────────────────────
+// ─── List view ───────────────────────────────────────────────────
 function ListView({ events, now }) {
   const grouped = useMemo(() => groupByMonth(events), [events])
+  const todayStr = toISO(now)
+  const nextRef = useRef(null)
+  const scrolled = useRef(false)
+
+  // Find the next upcoming event and its month group
+  const { nextGroupKey, nextEventId } = useMemo(() => {
+    for (const group of grouped) {
+      const upcoming = group.events.find(e => e.status !== 'cancelled' && (e.end_date || e.date) >= todayStr)
+      if (upcoming) return {
+        nextGroupKey: `${group.year}-${group.month}`,
+        nextEventId: upcoming.id
+      }
+    }
+    return { nextGroupKey: null, nextEventId: null }
+  }, [grouped, todayStr])
+
+  useEffect(() => {
+    if (!scrolled.current && nextRef.current) {
+      scrolled.current = true
+      setTimeout(() => {
+        nextRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+    }
+  }, [nextGroupKey])
+
   return (
     <div className="space-y-10">
       {grouped.map(({ year, month, events: monthEvents }) => {
+        const key = `${year}-${month}`
         const isPast    = new Date(year, month + 1, 0) < now
         const isCurrent = new Date(year, month) <= now && now <= new Date(year, month + 1, 0)
+        const isNext    = key === nextGroupKey
         return (
-          <section key={`${year}-${month}`}>
+          <section key={key} ref={isNext ? nextRef : null}>
             <div className="flex items-center gap-3 mb-4">
-              <span className={`text-xs font-semibold uppercase tracking-widest flex-shrink-0 ${isCurrent ? 'text-rl-accent' : isPast ? 'text-white/20' : 'text-white/50'}`}>
+              <span className={`text-xs font-semibold uppercase tracking-widest flex-shrink-0 ${isCurrent || isNext ? 'text-rl-accent' : isPast ? 'text-white/20' : 'text-white/50'}`}>
                 {LIST_MONTHS[month]} {year}
               </span>
-              {isCurrent && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />}
+              {(isCurrent || isNext) && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />}
               <div className="flex-1 h-px bg-white/6" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {monthEvents.map(event => <ListCard key={event.id} event={event} />)}
+              {monthEvents.map(event => <ListCard key={event.id} event={event} isUpNext={event.id === nextEventId} />)}
             </div>
           </section>
         )
@@ -361,18 +388,25 @@ function ListView({ events, now }) {
   )
 }
 
-function ListCard({ event }) {
+function ListCard({ event, isUpNext }) {
   const surf = SURFACE[event.surface] || SURFACE.mixed
   const isCancelled = event.status === 'cancelled'
   const isRallyGo = !!event.rally_id
   const card = (
     <div className={`relative h-full rounded-xl border overflow-hidden transition-all duration-150 ${
       isCancelled ? 'border-white/5 bg-white/2 opacity-45'
+      : isUpNext ? 'border-rl-accent/50 bg-rl-accent/6 ring-1 ring-rl-accent/20'
       : isRallyGo ? 'border-rl-accent/25 bg-rl-accent/4 hover:border-rl-accent/50 hover:bg-rl-accent/8 cursor-pointer'
       : 'border-white/8 bg-white/3 hover:border-white/18'
     }`}>
       <div className={`h-0.5 w-full opacity-70 ${surf.bg}`} />
       <div className="p-4">
+        {isUpNext && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />
+            <span className="text-[10px] font-semibold text-rl-accent uppercase tracking-widest">Up next</span>
+          </div>
+        )}
         <div className="flex items-start justify-between gap-2 mb-2.5">
           <div className="flex flex-wrap gap-1.5">
             <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${surf.light} ${surf.text} ${surf.border}`}>
