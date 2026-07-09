@@ -59,10 +59,11 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
   }
 
-  const isOrganiser = profile?.role === 'organiser'
+  const isOrganiser    = profile?.role === 'organiser'
+  const isSuperAdmin   = profile?.is_super_admin === true
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, isOrganiser }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, isOrganiser, isSuperAdmin }}>
       {children}
     </AuthContext.Provider>
   )

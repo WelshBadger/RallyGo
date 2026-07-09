@@ -20,7 +20,15 @@ function ProtectedOrganiser({ children }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>
   if (!user) return <Navigate to="/login" replace />
-  if (profile?.role !== 'organiser') return <Navigate to="/" replace />
+  if (profile?.role !== 'organiser' && !profile?.is_super_admin) return <Navigate to="/" replace />
+  return children
+}
+
+function ProtectedAdmin({ children }) {
+  const { user, profile, loading } = useAuth()
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>
+  if (!user) return <Navigate to="/login" replace />
+  if (!profile?.is_super_admin) return <Navigate to="/" replace />
   return children
 }
 
@@ -133,7 +141,7 @@ export default function App() {
           <ProtectedOrganiser><ManageEventPage /></ProtectedOrganiser>
         } />
         <Route path="/admin" element={
-          <ProtectedOrganiser><AdminPage /></ProtectedOrganiser>
+          <ProtectedAdmin><AdminPage /></ProtectedAdmin>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

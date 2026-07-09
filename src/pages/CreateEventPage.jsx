@@ -8,7 +8,7 @@ const EVENT_PRICE = parseInt(import.meta.env.VITE_EVENT_PRICE_PENCE || '5000')
 const PRICE_DISPLAY = `£${(EVENT_PRICE / 100).toFixed(2)}`
 
 export default function CreateEventPage() {
-  const { user } = useAuth()
+  const { user, isSuperAdmin } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({
     name: '',
@@ -28,6 +28,27 @@ export default function CreateEventPage() {
     setLoading(true)
 
     try {
+      if (isSuperAdmin) {
+        // Super admin: create rally as active directly, no payment
+        const { data: rally, error } = await supabase
+          .from('rallies')
+          .insert({
+            name: form.name,
+            date: form.date,
+            end_date: form.endDate || null,
+            location: form.location,
+            series: form.series || null,
+            organiser_id: user.id,
+            status: 'active',
+          })
+          .select()
+          .single()
+        if (error) throw error
+        toast.success('Rally created!')
+        navigate(`/organiser/event/${rally.id}`)
+        return
+      }
+
       // 1. Create rally as draft
       const { data: rally, error } = await supabase
         .from('rallies')
@@ -79,7 +100,9 @@ export default function CreateEventPage() {
 
       <h1 className="text-2xl font-medium text-white mb-1">Create an event</h1>
       <p className="text-white/40 text-sm mb-7">
-        Fill in your event details. You'll be taken to a secure payment page ({PRICE_DISPLAY} per event) to activate it.
+        {isSuperAdmin
+          ? 'Super admin — rally will be created as active immediately.'
+          : `Fill in your event details. You'll be taken to a secure payment page (${PRICE_DISPLAY} per event) to activate it.`}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -141,14 +164,16 @@ export default function CreateEventPage() {
           />
         </div>
 
-        {/* Price summary */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-white text-sm font-medium">Event activation fee</p>
-            <p className="text-white/40 text-xs mt-0.5">One-time per event. Includes all features.</p>
+        {/* Price summary — hidden for super admin */}
+        {!isSuperAdmin && (
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-white text-sm font-medium">Event activation fee</p>
+              <p className="text-white/40 text-xs mt-0.5">One-time per event. Includes all features.</p>
+            </div>
+            <span className="text-white text-xl font-medium">{PRICE_DISPLAY}</span>
           </div>
-          <span className="text-white text-xl font-medium">{PRICE_DISPLAY}</span>
-        </div>
+        )}
 
         <button
           type="submit"
@@ -157,6 +182,8 @@ export default function CreateEventPage() {
         >
           {loading ? (
             <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+          ) : isSuperAdmin ? (
+            <>Create rally &rarr;</>
           ) : (
             <>Continue to payment &rarr;</>
           )}
