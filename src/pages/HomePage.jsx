@@ -41,70 +41,27 @@ export default function HomePage() {
     <main className="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-14">
 
       {/* ── How it works ── */}
-      <section>
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-white/30 text-[11px] font-semibold uppercase tracking-widest">How RallyGo works</span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <section className="bg-white/3 border border-white/8 rounded-2xl px-5 py-4">
+        <p className="text-white/30 text-[10px] font-semibold uppercase tracking-widest mb-3">How RallyGo works</p>
+        <div className="flex flex-wrap items-center gap-y-2">
           {[
-            {
-              icon: (
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              ),
-              title: 'Official documents',
-              body: 'Regulations, bulletins and final instructions — all in one place.',
-            },
-            {
-              icon: (
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-              ),
-              title: 'Route & stages',
-              body: 'Stage maps, road sections and service info on the day.',
-            },
-            {
-              icon: (
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              ),
-              title: 'Full UK calendar',
-              body: 'Every major rally in the 2026 season with countdowns.',
-            },
-            {
-              icon: (
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              ),
-              title: 'Rally Logistics',
-              body: 'Team upgrade — schedule, fuel plan, crew info and recce notes shared with your whole team.',
-              accent: true,
-              href: 'https://project-z92lx.vercel.app',
-            },
-          ].map(item => {
-            const inner = (
-              <>
-                <div className="w-9 h-9 rounded-lg bg-rl-accent/10 border border-rl-accent/20 flex items-center justify-center text-rl-accent mb-4">
-                  {item.icon}
-                </div>
-                <h3 className={`font-medium text-sm mb-1.5 ${item.accent ? 'text-rl-accent' : 'text-white'}`}>{item.title}</h3>
-                <p className="text-white/40 text-xs leading-relaxed">{item.body}</p>
-              </>
-            )
-            const cls = `border rounded-xl p-4 sm:p-5 ${item.accent ? 'bg-rl-accent/5 border-rl-accent/25 hover:bg-rl-accent/8 transition-colors' : 'bg-white/3 border-white/8'}`
-            return item.href
-              ? <a key={item.title} href={item.href} target="_blank" rel="noopener noreferrer" className={`${cls} block no-underline`}>{inner}</a>
-              : <div key={item.title} className={cls}>{inner}</div>
-          })}
+            { n: '1', label: 'Create a free account' },
+            { n: '2', label: 'Browse the UK rally calendar' },
+            { n: '3', label: 'Access official documents & stage info' },
+            { n: '4', label: 'Plan with Rally Logistics', accent: true },
+          ].map((step, i, arr) => (
+            <div key={step.n} className="flex items-center gap-2">
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${step.accent ? 'bg-rl-accent text-white' : 'bg-white/10 text-white/60'}`}>
+                {step.n}
+              </span>
+              <span className={`text-sm ${step.accent ? 'text-rl-accent font-medium' : 'text-white/70'}`}>{step.label}</span>
+              {i < arr.length - 1 && <span className="text-white/20 mx-1">→</span>}
+            </div>
+          ))}
         </div>
-
-        <div className="mt-5 flex items-center gap-3">
-          <Link to="/calendar" className="rl-btn-primary text-sm px-5 py-2.5 no-underline">View calendar</Link>
-          {!user && <Link to="/register" className="rl-btn-ghost text-sm px-5 py-2.5 no-underline">Create account</Link>}
+        <div className="mt-4 flex items-center gap-3">
+          <Link to="/calendar" className="rl-btn-primary text-sm px-5 py-2 no-underline">View calendar</Link>
+          {!user && <Link to="/register" className="rl-btn-ghost text-sm px-5 py-2 no-underline">Create account</Link>}
         </div>
       </section>
 
