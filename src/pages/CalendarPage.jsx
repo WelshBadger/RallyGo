@@ -72,24 +72,36 @@ function groupByMonth(events) {
 }
 
 export default function CalendarPage() {
-  const [events, setEvents]       = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [view, setView]           = useState('list') // 'calendar' | 'list'
-  const [selected, setSelected]   = useState(null)       // event object (for detail sheet)
+  const [events, setEvents]           = useState([])
+  const [championships, setChampionships] = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [view, setView]               = useState('list')
+  const [selected, setSelected]       = useState(null)
+  const [champFilter, setChampFilter] = useState('all')
 
   const now = new Date()
   const [calYear,  setCalYear]  = useState(now.getFullYear())
   const [calMonth, setCalMonth] = useState(now.getMonth())
 
   useEffect(() => {
-    supabase
-      .from('calendar_events')
-      .select('*')
-      .order('date', { ascending: true })
-      .then(({ data }) => { setEvents(data || []); setLoading(false) })
+    Promise.all([
+      supabase.from('calendar_events').select('*').order('date', { ascending: true }),
+      supabase.from('championships').select('*').order('name'),
+    ]).then(([{ data: evData }, { data: champData }]) => {
+      setEvents(evData || [])
+      setChampionships(champData || [])
+      setLoading(false)
+    })
   }, [])
 
   const calDays = useMemo(() => buildCalendarDays(calYear, calMonth), [calYear, calMonth])
+
+  const filteredEvents = useMemo(() =>
+    champFilter === 'all'
+      ? events
+      : events.filter(e => (e.series || []).includes(champFilter)),
+    [events, champFilter]
+  )
 
   function prevMonth() {
     if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11) }
@@ -100,13 +112,13 @@ export default function CalendarPage() {
     else setCalMonth(m => m + 1)
   }
 
-  const confirmedCount = events.filter(e => e.status !== 'cancelled').length
+  const confirmedCount = filteredEvents.filter(e => e.status !== 'cancelled').length
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-8 sm:py-10">
 
       {/* Header row */}
-      <div className="flex items-end justify-between gap-4 mb-6">
+      <div className="flex items-end justify-between gap-4 mb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-0.5">UK Rally Calendar</h1>
           <p className="text-white/35 text-sm">{loading ? '…' : `${confirmedCount} confirmed events · 2026 season`}</p>
@@ -134,12 +146,45 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      {/* Championship filter chips */}
+      {!loading && championships.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap mb-5 overflow-x-auto pb-1">
+          <button
+            onClick={() => setChampFilter('all')}
+            className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
+              champFilter === 'all'
+                ? 'bg-white text-black border-white'
+                : 'border-white/15 text-white/50 hover:text-white hover:border-white/30'
+            }`}
+          >
+            All events
+          </button>
+          {championships.map(c => {
+            const active = champFilter === c.short_name
+            return (
+              <button
+                key={c.id}
+                onClick={() => setChampFilter(active ? 'all' : c.short_name)}
+                className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
+                  active
+                    ? 'text-white border-transparent'
+                    : 'border-white/15 text-white/50 hover:text-white hover:border-white/30'
+                }`}
+                style={active ? { backgroundColor: c.color || '#E24B4A', borderColor: c.color || '#E24B4A' } : {}}
+              >
+                {c.short_name}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {loading ? (
         <div className="h-96 bg-white/3 rounded-2xl animate-pulse" />
       ) : view === 'calendar' ? (
         <CalendarGrid
           days={calDays}
-          events={events}
+          events={filteredEvents}
           year={calYear}
           month={calMonth}
           onPrev={prevMonth}
@@ -148,7 +193,7 @@ export default function CalendarPage() {
           now={now}
         />
       ) : (
-        <ListView events={events} now={now} />
+        <ListView events={filteredEvents} now={now} />
       )}
 
       {/* Surface legend */}
