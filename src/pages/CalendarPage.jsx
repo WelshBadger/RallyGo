@@ -354,13 +354,14 @@ function ListView({ events, now }) {
   }, [grouped, todayStr])
 
   useEffect(() => {
-    if (!scrolled.current && nextRef.current) {
-      scrolled.current = true
-      setTimeout(() => {
-        nextRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 100)
-    }
-  }, [nextGroupKey])
+    if (events.length === 0 || scrolled.current) return
+    scrolled.current = true
+    requestAnimationFrame(() => {
+      if (!nextRef.current) return
+      const top = nextRef.current.getBoundingClientRect().top + window.pageYOffset - 80
+      window.scrollTo({ top, behavior: 'smooth' })
+    })
+  }, [events])
 
   return (
     <div className="space-y-10">
