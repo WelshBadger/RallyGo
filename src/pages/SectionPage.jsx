@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatDistanceToNow } from '../lib/dateUtils'
+import BackButton from '../components/BackButton'
 
 const SECTION_META = {
   'pre-event':  { label: 'Pre-event info',          color: '#E24B4A' },
@@ -10,7 +11,8 @@ const SECTION_META = {
   'team':       { label: 'Organising team',          color: '#1D9E75' },
   'accommodation': { label: 'Accommodation',         color: '#7F77DD' },
   'results':    { label: 'Live results',             color: '#BA7517' },
-  'entry-list': { label: 'Entry list',               color: '#0EA5A0' },
+  'entry-list':  { label: 'Entry list',               color: '#0EA5A0' },
+  'rally-guide': { label: 'Rally Guide',              color: '#f97316' },
 }
 
 export default function SectionPage() {
@@ -57,13 +59,9 @@ export default function SectionPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-5 sm:py-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-white/30 mb-5">
-        <Link to="/" className="hover:text-white/60 no-underline transition-colors">Events</Link>
-        <span>/</span>
-        <Link to={`/event/${rallyId}`} className="hover:text-white/60 no-underline transition-colors">{rally?.name}</Link>
-        <span>/</span>
-        <span className="text-white/60">{meta.label}</span>
+      {/* Back */}
+      <div className="mb-5">
+        <BackButton to={`/event/${rallyId}`} label={rally?.name || 'Event'} />
       </div>
 
       {/* Section header */}

@@ -5,12 +5,24 @@ import { useAuth } from '../context/AuthContext'
 import TileGrid from '../components/TileGrid'
 import BulletinFeed from '../components/BulletinFeed'
 import { formatDateRange } from '../lib/dateUtils'
+import BackButton from '../components/BackButton'
+
+// Public VAPID key for push subscriptions
+const VAPID_PUBLIC_KEY = 'BIcwQ-AgPS8rQeybSdJEYAohASdl7C3vx9ls5N5BWx0qC_2Av_gx1k-USjFEeZmjeM-KYGua2tKWqIYNWvPWZc8'
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(base64)
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)))
+}
 
 export default function EventPage() {
   const { rallyId } = useParams()
   const [rally, setRally] = useState(null)
   const [loading, setLoading] = useState(true)
   const [newCounts, setNewCounts] = useState({})
+  const [notifStatus, setNotifStatus] = useState(null) // null | 'default' | 'granted' | 'denied' | 'subscribing'
   const { isOrganiser, user } = useAuth()
 
   useEffect(() => {
@@ -45,6 +57,40 @@ export default function EventPage() {
     loadNewCounts()
   }, [rallyId])
 
+  // Check notification permission status
+  useEffect(() => {
+    if (!user || !('Notification' in window) || !('serviceWorker' in navigator)) return
+    setNotifStatus(Notification.permission)
+  }, [user])
+
+  async function subscribeForPush() {
+    if (!user) return
+    setNotifStatus('subscribing')
+    try {
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') { setNotifStatus(permission); return }
+
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      })
+
+      const { endpoint, keys } = sub.toJSON()
+      await supabase.from('push_subscriptions').upsert({
+        user_id: user.id,
+        rally_id: rallyId,
+        endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+      }, { onConflict: 'endpoint,rally_id' })
+
+      setNotifStatus('granted')
+    } catch {
+      setNotifStatus('default')
+    }
+  }
+
   if (loading) return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="h-32 bg-white/5 rounded-xl animate-pulse mb-4" />
@@ -57,7 +103,7 @@ export default function EventPage() {
   if (!rally) return (
     <div className="max-w-4xl mx-auto px-4 py-8 text-center">
       <p className="text-white/40">Event not found.</p>
-      <Link to="/" className="text-rl-accent text-sm mt-2 inline-block">← Back to events</Link>
+      <BackButton to="/calendar" label="Calendar" />
     </div>
   )
 
@@ -68,12 +114,9 @@ export default function EventPage() {
       {/* Dark event header */}
       <div className="bg-[#111] -mx-4 px-4 sm:px-6 pt-6 pb-0 mb-6 sm:rounded-b-2xl border-b border-white/8">
         {/* Back */}
-        <Link to="/" className="text-white/30 hover:text-white/60 text-xs flex items-center gap-1 mb-4 no-underline transition-colors">
-          <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
-            <path fillRule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z" clipRule="evenodd" />
-          </svg>
-          All events
-        </Link>
+        <div className="mb-4">
+          <BackButton to="/calendar" label="Calendar" />
+        </div>
 
         {/* Meta */}
         <div className="flex items-center gap-2 mb-2">
@@ -129,6 +172,28 @@ export default function EventPage() {
             >
               Open Rally Logistics →
             </a>
+          </div>
+        )}
+
+        {/* Push notification opt-in */}
+        {user && notifStatus === 'default' && (
+          <div className="flex items-center justify-between py-3 border-t border-white/8">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-rl-accent" />
+              <span className="text-white/40 text-xs">Get notified of live bulletins</span>
+            </div>
+            <button
+              onClick={subscribeForPush}
+              className="text-xs text-rl-accent hover:text-white transition-colors font-medium"
+            >
+              Enable notifications →
+            </button>
+          </div>
+        )}
+        {user && notifStatus === 'granted' && (
+          <div className="flex items-center gap-2 py-3 border-t border-white/8">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+            <span className="text-white/30 text-xs">Bulletin notifications on</span>
           </div>
         )}
       </div>

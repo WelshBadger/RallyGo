@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
+import BackButton from '../components/BackButton'
 import { formatDistanceToNow } from '../lib/dateUtils'
 
 const SECTIONS = [
@@ -13,6 +14,7 @@ const SECTIONS = [
   { key: 'accommodation', label: 'Accommodation' },
   { key: 'results',    label: 'Live results' },
   { key: 'entry-list', label: 'Entry list' },
+  { key: 'rally-guide', label: 'Rally Guide' },
 ]
 
 export default function ManageEventPage() {
@@ -98,6 +100,27 @@ export default function ManageEventPage() {
         stage_number: form.stageNumber ? parseInt(form.stageNumber) : null,
       })
       if (error) throw error
+
+      // Send push notification to subscribers (bulletins section always; urgent docs always)
+      if (activeSection === 'bulletins' || form.isUrgent) {
+        const { data: { session } } = await supabase.auth.getSession()
+        fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              rallyId,
+              title: `${rally.name}${form.isUrgent ? ' 🚨' : ''}`,
+              body: form.title,
+            }),
+          }
+        ).catch(() => {}) // Fire and forget — don't block the UI
+      }
 
       toast.success('Document posted!')
       setForm({ title: '', section: activeSection, file: null, isUrgent: false, linkUrl: '', stageNumber: '' })
@@ -372,10 +395,8 @@ export default function ManageEventPage() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-6">
       {/* Header */}
-      <div className="flex items-center gap-2 text-xs text-white/30 mb-5">
-        <Link to="/organiser" className="hover:text-white/60 no-underline transition-colors">Dashboard</Link>
-        <span>/</span>
-        <span className="text-white/60">{rally.name}</span>
+      <div className="mb-5">
+        <BackButton to="/organiser" label="Dashboard" />
       </div>
 
       <div className="flex items-start justify-between gap-4 mb-6">
@@ -704,7 +725,13 @@ export default function ManageEventPage() {
         <div className="lg:col-span-2 space-y-5">
           {/* Upload form */}
           <div className="bg-rl-card border border-white/10 rounded-xl p-5">
-            <h2 className="text-white font-medium text-sm mb-4">Post to {SECTIONS.find(s => s.key === activeSection)?.label}</h2>
+            <h2 className="text-white font-medium text-sm mb-1">Post to {SECTIONS.find(s => s.key === activeSection)?.label}</h2>
+            {activeSection === 'rally-guide' && (
+              <p className="text-amber-400/70 text-xs mb-4 leading-relaxed">
+                ⚠ Rally Guides typically overlap with regulations and final instructions — the same info may be extracted multiple times. That's expected for BRC-level events.
+              </p>
+            )}
+            {activeSection !== 'rally-guide' && <div className="mb-4" />}
 
             {/* Type selector */}
             <div className="flex gap-2 mb-4">
