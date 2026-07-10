@@ -71,13 +71,29 @@ function NewsTab() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null)
+  const [showOnHome, setShowOnHome] = useState(true)
+  const [togglingHome, setTogglingHome] = useState(false)
 
   async function load() {
-    const { data } = await supabase.from('news_posts').select('*').order('created_at', { ascending: false })
-    setPosts(data || [])
+    const [{ data: postsData }, { data: settings }] = await Promise.all([
+      supabase.from('news_posts').select('*').order('created_at', { ascending: false }),
+      supabase.from('site_settings').select('show_news_on_homepage').eq('id', 1).single(),
+    ])
+    setPosts(postsData || [])
+    if (settings) setShowOnHome(settings.show_news_on_homepage)
     setLoading(false)
   }
   useEffect(() => { load() }, [])
+
+  async function toggleHomeNews() {
+    setTogglingHome(true)
+    const next = !showOnHome
+    const { error } = await supabase.from('site_settings').update({ show_news_on_homepage: next }).eq('id', 1)
+    if (error) { toast.error('Failed to update'); setTogglingHome(false); return }
+    setShowOnHome(next)
+    setTogglingHome(false)
+    toast.success(next ? 'News shown on homepage' : 'News hidden from homepage')
+  }
 
   async function handleDelete(id) {
     if (!confirm('Delete this post?')) return
@@ -107,7 +123,24 @@ function NewsTab() {
     <Section
       title="News posts"
       count={`${posts.filter(p => p.status === 'published').length} published`}
-      action={<button onClick={() => setEditing('new')} className="rl-btn-primary text-sm px-4 py-2">+ New post</button>}
+      action={
+        <div className="flex items-center gap-3">
+          {/* Homepage visibility toggle */}
+          <button
+            onClick={toggleHomeNews}
+            disabled={togglingHome}
+            className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg border transition-all disabled:opacity-50"
+            style={showOnHome
+              ? { borderColor: 'rgba(16,185,129,0.4)', color: 'rgb(52,211,153)', background: 'rgba(16,185,129,0.08)' }
+              : { borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.35)', background: 'transparent' }
+            }
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${showOnHome ? 'bg-emerald-400' : 'bg-white/20'}`} />
+            {showOnHome ? 'Shown on homepage' : 'Hidden from homepage'}
+          </button>
+          <button onClick={() => setEditing('new')} className="rl-btn-primary text-sm px-4 py-2">+ New post</button>
+        </div>
+      }
       loading={loading}
       empty={posts.length === 0}
       emptyText="No posts yet."

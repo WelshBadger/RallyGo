@@ -19,23 +19,25 @@ function fmtDate(str) {
 }
 
 export default function HomePage() {
-  const [news, setNews]       = useState([])
-  const [rallies, setRallies] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [news, setNews]             = useState([])
+  const [rallies, setRallies]       = useState([])
+  const [showNews, setShowNews]     = useState(true)
+  const [loading, setLoading]       = useState(true)
   const { user } = useAuth()
 
   useEffect(() => {
     async function load() {
       const today = new Date().toISOString().split('T')[0]
-      const [{ data: newsData }, { data: rallyData }] = await Promise.all([
+      const [{ data: newsData }, { data: rallyData }, { data: settings }] = await Promise.all([
         supabase.from('news_posts').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(1),
-        // Show rallies that haven't fully ended yet (use end_date if set, else date)
         supabase.from('rallies').select('*').eq('status', 'active')
           .or(`end_date.gte.${today},and(end_date.is.null,date.gte.${today})`)
           .order('date', { ascending: true }).limit(3),
+        supabase.from('site_settings').select('show_news_on_homepage').eq('id', 1).single(),
       ])
       setNews(newsData || [])
       setRallies(rallyData || [])
+      if (settings) setShowNews(settings.show_news_on_homepage)
       setLoading(false)
     }
     load()
@@ -70,7 +72,7 @@ export default function HomePage() {
       </section>
 
       {/* ── News section ── */}
-      <section>
+      {showNews && <section>
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />
@@ -88,7 +90,7 @@ export default function HomePage() {
         ) : (
           <NewsCard post={news[0]} featured />
         )}
-      </section>
+      </section>}
 
       {/* ── Next rallies ── */}
       {rallies.length > 0 && (
