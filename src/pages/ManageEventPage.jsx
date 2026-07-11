@@ -10,6 +10,7 @@ const SECTIONS = [
   { key: 'pre-event',  label: 'Pre-event info' },
   { key: 'route',      label: 'Route information' },
   { key: 'bulletins',  label: 'Live bulletins' },
+  { key: 'recce',      label: 'Recce' },
   { key: 'team',       label: 'Organising team' },
   { key: 'accommodation', label: 'Accommodation' },
   { key: 'results',    label: 'Live results' },
@@ -107,9 +108,21 @@ export default function ManageEventPage() {
       })
       if (error) throw error
 
-      // Send push notification to subscribers (bulletins section always; urgent docs always)
-      if (activeSection === 'bulletins' || form.isUrgent) {
+      // Send push notification to all subscribers for any new document
+      {
         const { data: { session } } = await supabase.auth.getSession()
+        const sectionLabels = {
+          'bulletins': 'Live bulletin',
+          'results': 'Results update',
+          'route': 'Route update',
+          'recce': 'Recce info',
+          'pre-event': 'Pre-event update',
+          'team': 'Team update',
+          'accommodation': 'Accommodation update',
+          'entry-list': 'Entry list update',
+          'rally-guide': 'Rally Guide update',
+        }
+        const sectionLabel = sectionLabels[activeSection] || 'New document'
         fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`,
           {
@@ -122,10 +135,11 @@ export default function ManageEventPage() {
             body: JSON.stringify({
               rallyId,
               title: `${rally.name}${form.isUrgent ? ' 🚨' : ''}`,
-              body: form.title,
+              body: `${form.isUrgent ? '🚨 ' : ''}${sectionLabel}: ${form.title}`,
+              section: activeSection,
             }),
           }
-        ).catch(() => {}) // Fire and forget — don't block the UI
+        ).catch(() => {})
       }
 
       // Rally Guide PDFs: also run extraction (same data as regs + FI, overlaps are expected)

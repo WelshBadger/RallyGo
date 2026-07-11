@@ -37,18 +37,21 @@ export default function EventPage() {
     }
 
     async function loadNewCounts() {
-      // Get counts of documents posted in last 24h per section
-      const since = new Date(Date.now() - 86400000).toISOString()
+      // Fetch all docs and compare against localStorage "seen" timestamps
       const { data } = await supabase
         .from('rally_documents')
-        .select('section')
+        .select('section, created_at')
         .eq('rally_id', rallyId)
-        .gte('created_at', since)
+        .order('created_at', { ascending: false })
       if (data) {
-        const counts = data.reduce((acc, doc) => {
-          acc[doc.section] = (acc[doc.section] || 0) + 1
-          return acc
-        }, {})
+        const counts = {}
+        for (const doc of data) {
+          const seenKey = `rallygo:seen:${rallyId}:${doc.section}`
+          const seenAt = localStorage.getItem(seenKey)
+          if (!seenAt || new Date(doc.created_at) > new Date(seenAt)) {
+            counts[doc.section] = (counts[doc.section] || 0) + 1
+          }
+        }
         setNewCounts(counts)
       }
     }
@@ -64,8 +67,24 @@ export default function EventPage() {
     if (!user || !('Notification' in window) || !('serviceWorker' in navigator)) return
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
     if (isIOS && !isStandalone) return
-    setNotifStatus(Notification.permission)
-  }, [user])
+    // Check actual subscription state for this rally
+    async function checkSub() {
+      const permission = Notification.permission
+      if (permission !== 'granted') { setNotifStatus(permission); return }
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      if (!sub) { setNotifStatus('default'); return }
+      // Check if this subscription is saved for this rally
+      const { data } = await supabase
+        .from('push_subscriptions')
+        .select('id')
+        .eq('endpoint', sub.endpoint)
+        .eq('rally_id', rallyId)
+        .maybeSingle()
+      setNotifStatus(data ? 'granted' : 'default')
+    }
+    checkSub()
+  }, [user, rallyId])
 
   async function subscribeForPush() {
     if (!user) return
@@ -90,6 +109,22 @@ export default function EventPage() {
       }, { onConflict: 'endpoint,rally_id' })
 
       setNotifStatus('granted')
+    } catch {
+      setNotifStatus('default')
+    }
+  }
+
+  async function unsubscribeFromPush() {
+    try {
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      if (sub) {
+        const { endpoint } = sub.toJSON()
+        await supabase.from('push_subscriptions').delete()
+          .eq('endpoint', endpoint).eq('rally_id', rallyId)
+        await sub.unsubscribe()
+      }
+      setNotifStatus('default')
     } catch {
       setNotifStatus('default')
     }
@@ -179,28 +214,78 @@ export default function EventPage() {
           </div>
         )}
 
-        {/* Push notification opt-in */}
-        {user && notifStatus === 'default' && (
-          <div className="flex items-center justify-between py-3 border-t border-white/8">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-rl-accent" />
-              <span className="text-white/40 text-xs">Get notified of live bulletins</span>
-            </div>
-            <button
-              onClick={subscribeForPush}
-              className="text-xs text-rl-accent hover:text-white transition-colors font-medium"
-            >
-              Enable notifications →
-            </button>
-          </div>
-        )}
+        {/* Subtle granted indicator in header */}
         {user && notifStatus === 'granted' && (
           <div className="flex items-center gap-2 py-3 border-t border-white/8">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-            <span className="text-white/30 text-xs">Bulletin notifications on</span>
+            <span className="text-white/30 text-xs">Notifications on for this event</span>
           </div>
         )}
       </div>
+
+      {/* Push notification banner */}
+      {user && notifStatus === 'default' && (
+        <div className="mb-5 bg-rl-accent/10 border border-rl-accent/30 rounded-xl p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-rl-accent/20 flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-rl-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 01-3.46 0" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-medium">Get live bulletins instantly</p>
+            <p className="text-white/45 text-xs mt-0.5">Push alerts direct to your device when organisers post updates.</p>
+          </div>
+          <button
+            onClick={subscribeForPush}
+            className="rl-btn-primary text-xs flex-shrink-0 px-4 py-2.5"
+          >
+            Enable
+          </button>
+        </div>
+      )}
+
+      {user && notifStatus === 'subscribing' && (
+        <div className="mb-5 bg-rl-accent/10 border border-rl-accent/30 rounded-xl p-4 flex items-center gap-3">
+          <span className="w-4 h-4 border-2 border-rl-accent/30 border-t-rl-accent rounded-full animate-spin flex-shrink-0" />
+          <p className="text-white/60 text-sm">Enabling notifications…</p>
+        </div>
+      )}
+
+      {user && notifStatus === 'granted' && (
+        <div className="mb-5 bg-white/3 border border-white/8 rounded-xl p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 01-3.46 0" />
+              <path d="M5 3l14 14" stroke="none" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-medium">Notifications enabled</p>
+            <p className="text-white/35 text-xs mt-0.5">You'll receive live bulletins for this event.</p>
+          </div>
+          <button
+            onClick={unsubscribeFromPush}
+            className="text-xs text-white/30 hover:text-white/60 border border-white/10 hover:border-white/25 px-3 py-2 rounded-lg transition-all flex-shrink-0"
+          >
+            Disable
+          </button>
+        </div>
+      )}
+
+      {user && notifStatus === 'denied' && (
+        <div className="mb-5 bg-white/3 border border-white/8 rounded-xl p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 01-3.46 0" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          </div>
+          <p className="text-white/35 text-xs">Notifications blocked — enable them in your browser or device settings to receive live bulletins.</p>
+        </div>
+      )}
 
       {/* Login prompt for non-logged-in users */}
       {!user && (

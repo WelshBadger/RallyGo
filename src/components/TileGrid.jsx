@@ -35,6 +35,17 @@ const SECTIONS = [
     ),
   },
   {
+    key: 'recce',
+    label: 'Recce',
+    sub: 'Dates · Passes · Speed limits',
+    color: '#10b981',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+        <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+      </svg>
+    ),
+  },
+  {
     key: 'team',
     label: 'Organising team',
     sub: 'Contacts · Radio channels',
@@ -95,7 +106,7 @@ export default function TileGrid({ rallyId, newCounts = {} }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
       {SECTIONS.map((section) => {
-        const newCount = newCounts[section.key] || 0
+        const hasNew = (newCounts[section.key] || 0) > 0
         return (
           <Link
             key={section.key}
@@ -108,11 +119,9 @@ export default function TileGrid({ rallyId, newCounts = {} }) {
               style={{ background: section.color }}
             />
 
-            {/* New badge */}
-            {newCount > 0 && (
-              <span className="absolute top-3 right-3 bg-rl-accent text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none">
-                {newCount}
-              </span>
+            {/* Unread red dot */}
+            {hasNew && (
+              <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-rl-accent rounded-full" />
             )}
 
             {/* Icon */}

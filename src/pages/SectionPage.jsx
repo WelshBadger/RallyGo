@@ -8,6 +8,7 @@ const SECTION_META = {
   'pre-event':  { label: 'Pre-event info',          color: '#E24B4A' },
   'route':      { label: 'Route information',        color: '#378ADD' },
   'bulletins':  { label: 'Live bulletins & documents', color: '#E24B4A' },
+  'recce':      { label: 'Recce',                   color: '#10b981' },
   'team':       { label: 'Organising team',          color: '#1D9E75' },
   'accommodation': { label: 'Accommodation',         color: '#7F77DD' },
   'results':    { label: 'Live results',             color: '#BA7517' },
@@ -23,6 +24,9 @@ export default function SectionPage() {
   const meta = SECTION_META[section] || { label: section, color: '#E24B4A' }
 
   useEffect(() => {
+    // Mark this section as seen
+    localStorage.setItem(`rallygo:seen:${rallyId}:${section}`, new Date().toISOString())
+
     async function load() {
       const [{ data: rallyData }, { data: documents }] = await Promise.all([
         supabase.from('rallies').select('*').eq('id', rallyId).single(),
@@ -236,6 +240,61 @@ export default function SectionPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Recce: dates and rules from regulations */}
+      {!loading && section === 'recce' && rally?.regulations_data && (
+        (() => {
+          const recce = rally.regulations_data.recce
+          const reconDate = rally.regulations_data.reconDate
+          const hasDates = recce?.dates?.length > 0
+          const hasAny = hasDates || recce?.speedLimit || recce?.passes || recce?.notes || reconDate
+          if (!hasAny) return null
+          return (
+            <div className="mb-6">
+              <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium mb-3">From regulations</p>
+              <div className="bg-rl-card border border-white/10 rounded-2xl divide-y divide-white/8">
+                {hasDates ? (
+                  <div className="px-4 py-4">
+                    <p className="text-white/35 text-[11px] uppercase tracking-wide mb-2">Recce sessions</p>
+                    <div className="space-y-3">
+                      {recce.dates.map((d, i) => (
+                        <div key={i}>
+                          <p className="text-white text-sm font-medium">{d.day}</p>
+                          {d.times && <p className="text-white/60 text-sm">{d.times}</p>}
+                          {d.startLocation && <p className="text-white/40 text-xs mt-0.5">{d.startLocation}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : reconDate ? (
+                  <div className="px-4 py-4">
+                    <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Recce date</p>
+                    <p className="text-white text-sm">{reconDate}</p>
+                  </div>
+                ) : null}
+                {recce?.speedLimit && (
+                  <div className="px-4 py-4">
+                    <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Speed limit</p>
+                    <p className="text-white text-sm">{recce.speedLimit}</p>
+                  </div>
+                )}
+                {recce?.passes && (
+                  <div className="px-4 py-4">
+                    <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Passes allowed</p>
+                    <p className="text-white text-sm">{recce.passes}</p>
+                  </div>
+                )}
+                {recce?.notes && (
+                  <div className="px-4 py-4">
+                    <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Notes</p>
+                    <p className="text-white text-sm leading-relaxed">{recce.notes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()
       )}
 
       {/* Team: officials from regulations */}
