@@ -18,11 +18,19 @@ function fmtDate(str) {
   return new Date(str).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+const SURFACES = [
+  { key: 'all',        label: 'All rallies',  color: '#ffffff' },
+  { key: 'gravel',     label: 'Gravel',       color: '#f59e0b' },
+  { key: 'tarmac',     label: 'Tarmac',       color: '#3b82f6' },
+  { key: 'road_rally', label: 'Road Rally',   color: '#22c55e' },
+]
+
 export default function HomePage() {
   const [news, setNews]             = useState([])
   const [rallies, setRallies]       = useState([])
   const [showNews, setShowNews]     = useState(true)
   const [loading, setLoading]       = useState(true)
+  const [surface, setSurface]       = useState('all')
   const { user } = useAuth()
 
   useEffect(() => {
@@ -32,7 +40,7 @@ export default function HomePage() {
         supabase.from('news_posts').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(1),
         supabase.from('rallies').select('*').eq('status', 'active')
           .or(`end_date.gte.${today},and(end_date.is.null,date.gte.${today})`)
-          .order('date', { ascending: true }).limit(3),
+          .order('date', { ascending: true }).limit(20),
         supabase.from('site_settings').select('show_news_on_homepage').eq('id', 1).single(),
       ])
       setNews(newsData || [])
@@ -42,6 +50,10 @@ export default function HomePage() {
     }
     load()
   }, [])
+
+  const filteredRallies = surface === 'all'
+    ? rallies
+    : rallies.filter(r => r.surface === surface)
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-14">
@@ -119,20 +131,52 @@ export default function HomePage() {
         )}
       </section>}
 
-      {/* ── Next rallies ── */}
-      {rallies.length > 0 && (
-        <section>
-          <div className="flex items-center gap-2 mb-5">
+      {/* ── Rally filter + list ── */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />
-            <span className="text-rl-accent text-[11px] font-semibold uppercase tracking-widest">Next rallies</span>
+            <span className="text-rl-accent text-[11px] font-semibold uppercase tracking-widest">Upcoming rallies</span>
           </div>
+          <Link to="/calendar" className="text-white/40 hover:text-white text-xs transition-colors no-underline">Full calendar →</Link>
+        </div>
+
+        {/* Surface filter pills */}
+        <div className="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
+          {SURFACES.map(s => {
+            const active = surface === s.key
+            return (
+              <button
+                key={s.key}
+                onClick={() => setSurface(s.key)}
+                className="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all"
+                style={active
+                  ? { background: s.color + '22', borderColor: s.color + '60', color: s.color }
+                  : { background: 'transparent', borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)' }
+                }
+              >
+                {s.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {loading ? (
           <div className="space-y-3">
-            {rallies.map((rally, i) =>
+            {[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-white/5 rounded-2xl animate-pulse" />)}
+          </div>
+        ) : filteredRallies.length === 0 ? (
+          <div className="bg-white/3 border border-white/8 rounded-2xl p-10 text-center">
+            <p className="text-white/30 text-sm">No upcoming {surface !== 'all' ? SURFACES.find(s => s.key === surface)?.label.toLowerCase() + ' ' : ''}rallies found.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredRallies.map((rally, i) =>
               i === 0 ? <FeaturedCard key={rally.id} rally={rally} /> : <RallyCard key={rally.id} rally={rally} />
             )}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
     </main>
   )
