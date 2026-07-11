@@ -1,10 +1,14 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 
 const SECTIONS = [
+  {
+    id: 'team-chat', label: 'Team Chat', color: '#22c55e', desc: 'Live chat with your whole team', fullWidth: true,
+    icon: <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7"><path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd"/></svg>
+  },
   {
     id: 'results', label: 'Results', color: '#eab308', desc: 'Live timing & results — tap to load', fullWidth: true,
     icon: <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7"><path fillRule="evenodd" d="M10 1a9 9 0 100 18A9 9 0 0010 1zM5.904 9.458a1 1 0 011.414 0L9 11.14V5a1 1 0 112 0v6.14l1.682-1.682a1 1 0 111.414 1.414l-3.389 3.389a1 1 0 01-1.414 0L5.904 10.872a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
@@ -69,16 +73,46 @@ export default function PackPage() {
   const [shareUrl, setShareUrl] = useState(null)
 
   useEffect(() => {
+    if (!user) return
     async function load() {
       const [{ data: r }, { data: p }] = await Promise.all([
         supabase.from('rallies').select('*').eq('id', rallyId).single(),
         supabase.from('logistics_packs').select('*').eq('rally_id', rallyId).eq('user_id', user.id).maybeSingle(),
       ])
       setRally(r)
+
+      // Build stage list from extracted data, falling back to placeholders from stageCount
+      function buildStages(regsData) {
+        const stages = regsData?.stages || []
+        if (stages.length > 0) return stages
+        if (regsData?.stageCount > 0) {
+          return Array.from({ length: regsData.stageCount }, (_, i) => ({
+            number: i + 1, name: `SS${i + 1}`, distance: '',
+          }))
+        }
+        return []
+      }
+
       if (p) {
-        setPack(p)
+        // If pack exists but has an empty fuel schedule and the rally now has stage data, backfill it
+        if ((!p.fuel_schedule || p.fuel_schedule.length === 0)) {
+          const stages = buildStages(r?.regulations_data)
+          if (stages.length > 0) {
+            const updates = {
+              fuel_schedule: stages.map(s => ({ stage: s.number, name: s.name, distance: s.distance, fuel: '', notes: '' })),
+              recce_notes: Object.fromEntries(stages.map(s => [s.number, ''])),
+              stage_notes: Object.fromEntries(stages.map(s => [s.number, ''])),
+            }
+            const { data: updated } = await supabase.from('logistics_packs').update(updates).eq('id', p.id).select().single()
+            setPack(updated || p)
+          } else {
+            setPack(p)
+          }
+        } else {
+          setPack(p)
+        }
       } else {
-        const stages = r?.regulations_data?.stages || []
+        const stages = buildStages(r?.regulations_data)
         const newPack = {
           rally_id: rallyId,
           user_id: user.id,
@@ -127,13 +161,16 @@ export default function PackPage() {
 
   const fi = rally.final_instructions_data || {}
   const regs = rally.regulations_data || {}
-  const stages = regs.stages || []
+  // Use saved pack stages as source of truth (includes placeholders); fall back to raw extraction
+  const stages = regs.stages?.length > 0
+    ? regs.stages
+    : (pack?.fuel_schedule?.map(f => ({ number: f.stage, name: f.name, distance: f.distance })) || [])
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-6">
       <div className="mb-6">
-        <Link to="/" className="text-white/30 hover:text-white/60 text-xs flex items-center gap-1 mb-4 no-underline transition-colors">
-          <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+        <Link to="/" className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/7 border border-white/12 hover:bg-white/12 hover:border-white/22 transition-all text-white/60 hover:text-white text-sm font-medium no-underline mb-4">
+          <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
             <path fillRule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z" clipRule="evenodd" />
           </svg>
           All events
@@ -220,9 +257,10 @@ export default function PackPage() {
               </div>
             ) : null
           })()}
+          {tab === 'team-chat' && <TeamChatTab rallyId={rallyId} user={user} />}
           {tab === 'results'   && <ResultsTab pack={pack} onSave={save} />}
           {tab === 'team'      && <TeamTab pack={pack} onSave={save} />}
-          {tab === 'schedule'  && <ScheduleTab pack={pack} rally={rally} fi={fi} onSave={save} />}
+          {tab === 'schedule'  && <ScheduleTab pack={pack} rally={rally} fi={fi} regs={regs} onSave={save} />}
           {tab === 'stages'    && <StagesTab pack={pack} stages={stages} onSave={save} />}
           {tab === 'pre-event' && <PreEventTab fi={fi} rally={rally} />}
           {tab === 'locations' && <LocationsTab pack={pack} fi={fi} rally={rally} onSave={save} />}
@@ -396,17 +434,19 @@ function TeamTab({ pack, onSave }) {
 
 // ─── Schedule Tab ────────────────────────────────────────────────────────────
 
-function ScheduleTab({ pack, fi, onSave }) {
+function ScheduleTab({ pack, fi, regs, onSave }) {
   const [notes, setNotes] = useState(pack?.schedule_notes || '')
   const [dirty, setDirty] = useState(false)
-  const schedule = fi?.schedule || []
+  // Prefer FI schedule; fall back to regs schedule (common on BRC events with no separate FI yet)
+  const schedule = fi?.schedule?.length > 0 ? fi.schedule : (regs?.schedule || [])
+  const scheduleSource = fi?.schedule?.length > 0 ? 'Final Instructions' : 'Regulations'
   const signingOn = fi?.signingOn || []
 
   return (
     <div className="space-y-6">
       {schedule.length > 0 && (
         <div>
-          <h2 className="text-white font-medium mb-3">Official schedule <span className="text-white/25 text-xs font-normal ml-1">from Final Instructions</span></h2>
+          <h2 className="text-white font-medium mb-3">Official schedule <span className="text-white/25 text-xs font-normal ml-1">from {scheduleSource}</span></h2>
           <div className="bg-rl-card border border-white/10 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-white/5">
@@ -489,18 +529,24 @@ function StagesTab({ pack, stages, onSave }) {
 // ─── Pre-Event Tab ───────────────────────────────────────────────────────────
 
 function PreEventTab({ fi, rally }) {
+  const regs = rally?.regulations_data || {}
   const noiseLimit = fi?.noiseLimit
   const noiseTesting = fi?.noiseTesting
   const signingOn = fi?.signingOn || []
   const scrutineering = fi?.scrutineering || []
-  const rawServiceArea = fi?.serviceArea || rally?.regulations_data?.serviceArea
+  const rawServiceArea = fi?.serviceArea || regs?.serviceArea
   const serviceAreaLocation = typeof rawServiceArea === 'object'
     ? [rawServiceArea.location, rawServiceArea.openTime].filter(Boolean).join(' · ')
     : toStr(rawServiceArea)
   const serviceAreaNotes = typeof rawServiceArea === 'object' ? rawServiceArea.notes : null
   const importantNotes = fi?.importantNotes || []
+  const hasFiData = fi && Object.keys(fi).length > 0
 
-  if (!fi || Object.keys(fi).length === 0) {
+  // Even without FI, show what we have from regulations
+  const hasAnyData = noiseLimit || noiseTesting || rawServiceArea || signingOn.length > 0
+    || scrutineering.length > 0 || regs?.rallyHQ || regs?.clerkOfCourse
+
+  if (!hasAnyData) {
     return (
       <div className="text-center py-16 bg-rl-card border border-white/8 rounded-xl">
         <p className="text-white/30 text-sm">Pre-event information will appear here once the organiser uploads the Final Instructions on RallyGo.</p>
@@ -521,6 +567,36 @@ function PreEventTab({ fi, rally }) {
             <div className="mt-2 space-y-0.5">
               {noiseTesting.times && <p className="text-white/50 text-sm">{noiseTesting.times}</p>}
               {noiseTesting.location && <p className="text-white/35 text-xs">{noiseTesting.location}</p>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Key info from regulations when no FI yet */}
+      {!hasFiData && (regs.rallyHQ || regs.clerkOfCourse || regs.totalStageDistance) && (
+        <div className="bg-rl-card border border-white/10 rounded-xl p-4 grid grid-cols-2 gap-4">
+          {regs.rallyHQ && (
+            <div>
+              <p className="text-white/35 text-xs uppercase tracking-wide mb-1">Rally HQ</p>
+              <p className="text-white text-sm">{regs.rallyHQ}</p>
+            </div>
+          )}
+          {regs.clerkOfCourse && (
+            <div>
+              <p className="text-white/35 text-xs uppercase tracking-wide mb-1">Clerk of Course</p>
+              <p className="text-white text-sm">{regs.clerkOfCourse}</p>
+            </div>
+          )}
+          {regs.totalStageDistance && (
+            <div>
+              <p className="text-white/35 text-xs uppercase tracking-wide mb-1">Total stage distance</p>
+              <p className="text-white text-sm">{regs.totalStageDistance}</p>
+            </div>
+          )}
+          {regs.reconDate && (
+            <div>
+              <p className="text-white/35 text-xs uppercase tracking-wide mb-1">Recce</p>
+              <p className="text-white text-sm">{regs.reconDate}</p>
             </div>
           )}
         </div>
@@ -1007,6 +1083,135 @@ function CarSetupTab({ pack, rally, onSave }) {
           <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-lg">✕</button>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Team Chat Tab ────────────────────────────────────────────────────────────
+
+function TeamChatTab({ rallyId, user }) {
+  const [messages, setMessages] = useState([])
+  const [text, setText] = useState('')
+  const [sending, setSending] = useState(false)
+  const bottomRef = useRef(null)
+
+  useEffect(() => {
+    // Load latest messages
+    supabase
+      .from('team_chat_messages')
+      .select('*')
+      .eq('rally_id', rallyId)
+      .order('created_at', { ascending: true })
+      .limit(200)
+      .then(({ data }) => setMessages(data || []))
+
+    // Subscribe to realtime inserts
+    const channel = supabase
+      .channel(`team-chat-${rallyId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'team_chat_messages',
+        filter: `rally_id=eq.${rallyId}`,
+      }, payload => {
+        setMessages(m => [...m, payload.new])
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [rallyId])
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  async function send() {
+    const msg = text.trim()
+    if (!msg || sending) return
+    setSending(true)
+    setText('')
+    await supabase.from('team_chat_messages').insert({
+      rally_id: rallyId,
+      user_id: user.id,
+      user_email: user.email,
+      message: msg,
+    })
+    setSending(false)
+  }
+
+  function fmtTime(ts) {
+    return new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  const isMe = (m) => m.user_id === user.id
+
+  return (
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 280px)', minHeight: '420px' }}>
+      {/* Messages list */}
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-40 gap-2">
+            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-white/20">
+                <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd"/>
+              </svg>
+            </div>
+            <p className="text-white/25 text-sm">No messages yet — start the conversation</p>
+          </div>
+        ) : (
+          messages.map((m) => (
+            <div key={m.id} className={`flex gap-2.5 ${isMe(m) ? 'flex-row-reverse' : ''}`}>
+              {/* Avatar */}
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5 ${isMe(m) ? 'bg-[#22c55e]/20 text-[#22c55e]' : 'bg-white/10 text-white/60'}`}>
+                {(m.user_email || '?')[0].toUpperCase()}
+              </div>
+              {/* Bubble */}
+              <div className={`flex flex-col gap-1 max-w-[75%] ${isMe(m) ? 'items-end' : 'items-start'}`}>
+                {!isMe(m) && (
+                  <p className="text-white/35 text-[10px] px-1 leading-none">{m.user_email?.split('@')[0] || 'Team'}</p>
+                )}
+                <div className={`px-3.5 py-2.5 text-sm leading-relaxed break-words ${
+                  isMe(m)
+                    ? 'bg-[#22c55e]/12 border border-[#22c55e]/25 text-white rounded-2xl rounded-tr-sm'
+                    : 'bg-white/8 border border-white/10 text-white/85 rounded-2xl rounded-tl-sm'
+                }`}>
+                  {m.message}
+                </div>
+                <p className="text-white/20 text-[10px] px-1">{fmtTime(m.created_at)}</p>
+              </div>
+            </div>
+          ))
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <div className="pt-4 border-t border-white/8 mt-2">
+        <div className="flex gap-2 items-end">
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+            }}
+            placeholder="Message your team… (Enter to send)"
+            rows={1}
+            className="rl-input flex-1 text-sm resize-none"
+            style={{ minHeight: '42px', maxHeight: '120px' }}
+          />
+          <button
+            onClick={send}
+            disabled={!text.trim() || sending}
+            className="flex-shrink-0 w-10 h-[42px] rounded-xl bg-[#22c55e]/20 border border-[#22c55e]/35 hover:bg-[#22c55e]/30 disabled:opacity-30 transition-all flex items-center justify-center"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-[#22c55e]">
+              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+            </svg>
+          </button>
+        </div>
+        <p className="text-white/15 text-[10px] mt-1.5 px-1">Shift+Enter for new line · messages are shared with your whole team</p>
+      </div>
     </div>
   )
 }

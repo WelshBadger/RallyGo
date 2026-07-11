@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
+import BackButton from '../components/BackButton'
 
 const EVENT_PRICE = parseInt(import.meta.env.VITE_EVENT_PRICE_PENCE || '5000')
 const PRICE_DISPLAY = `£${(EVENT_PRICE / 100).toFixed(2)}`
@@ -92,10 +93,8 @@ export default function CreateEventPage() {
 
   return (
     <main className="max-w-xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-2 text-xs text-white/30 mb-6">
-        <Link to="/organiser" className="hover:text-white/60 no-underline transition-colors">Dashboard</Link>
-        <span>/</span>
-        <span className="text-white/60">New event</span>
+      <div className="mb-6">
+        <BackButton to="/organiser" label="Dashboard" />
       </div>
 
       <h1 className="text-2xl font-medium text-white mb-1">Create an event</h1>

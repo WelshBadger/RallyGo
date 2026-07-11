@@ -18,7 +18,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           {user ? (
             <Link to="/account"
-              className="w-8 h-8 rounded-full bg-rl-accent/15 border border-rl-accent/25 flex items-center justify-center no-underline hover:bg-rl-accent/25 transition-colors"
+              className="w-11 h-11 rounded-full bg-rl-accent/15 border border-rl-accent/25 flex items-center justify-center no-underline hover:bg-rl-accent/25 transition-colors"
               title={user.email}>
               <span className="text-rl-accent font-bold text-sm">
                 {user.email?.[0]?.toUpperCase()}

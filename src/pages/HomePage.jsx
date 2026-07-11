@@ -47,27 +47,54 @@ export default function HomePage() {
     <main className="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-14">
 
       {/* ── How it works ── */}
-      <section className="bg-white/3 border border-white/8 rounded-2xl px-5 py-4">
-        <p className="text-white/30 text-[10px] font-semibold uppercase tracking-widest mb-3">How RallyGo works</p>
-        <div className="flex flex-wrap items-center gap-y-2">
+      <section>
+        <div className="text-center mb-8">
+          <p className="text-rl-accent text-[11px] font-semibold uppercase tracking-widest mb-2">How it works</p>
+          <h2 className="text-white text-2xl sm:text-3xl font-semibold">Everything you need, one place</h2>
+          <p className="text-white/40 text-sm mt-2">From the start list to the service park — RallyGo keeps your team connected and informed.</p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { n: '1', label: 'Create a free account' },
-            { n: '2', label: 'Browse the UK rally calendar' },
-            { n: '3', label: 'Access official documents & stage info' },
-            { n: '4', label: 'Plan with Rally Logistics', accent: true },
-          ].map((step, i, arr) => (
-            <div key={step.n} className="flex items-center gap-2">
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${step.accent ? 'bg-rl-accent text-white' : 'bg-white/10 text-white/60'}`}>
-                {step.n}
-              </span>
-              <span className={`text-sm ${step.accent ? 'text-rl-accent font-medium' : 'text-white/70'}`}>{step.label}</span>
-              {i < arr.length - 1 && <span className="text-white/20 mx-1">→</span>}
+            {
+              n: '01', label: 'Create an account', desc: 'Sign up free in seconds — no app store needed.',
+              color: '#3b82f6',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+            },
+            {
+              n: '02', label: 'Browse the calendar', desc: 'Find every UK rally — gravel, tarmac, road.',
+              color: '#f59e0b',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            },
+            {
+              n: '03', label: 'Access live documents', desc: 'Regulations, bulletins, entry lists — always up to date.',
+              color: '#E24B4A',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+            },
+            {
+              n: '04', label: 'Plan with your team', desc: 'Fuel stops, recce notes, schedules — offline too.',
+              color: '#22c55e',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
+            },
+          ].map(step => (
+            <div key={step.n} className="rounded-2xl border p-4 sm:p-5 flex flex-col gap-3"
+              style={{ background: step.color + '12', borderColor: step.color + '30' }}>
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: step.color + '20', color: step.color }}>
+                  {step.icon}
+                </div>
+                <span className="text-[11px] font-bold tabular-nums" style={{ color: step.color + 'aa' }}>{step.n}</span>
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm leading-tight mb-1">{step.label}</p>
+                <p className="text-white/45 text-xs leading-snug">{step.desc}</p>
+              </div>
             </div>
           ))}
         </div>
-        <div className="mt-4 flex items-center gap-3">
-          <Link to="/calendar" className="rl-btn-primary text-sm px-5 py-2 no-underline">View calendar</Link>
-          {!user && <Link to="/register" className="rl-btn-ghost text-sm px-5 py-2 no-underline">Create account</Link>}
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <Link to="/calendar" className="rl-btn-primary text-sm px-6 py-2.5 no-underline">View calendar</Link>
+          {!user && <Link to="/register" className="rl-btn-ghost text-sm px-6 py-2.5 no-underline">Create free account</Link>}
         </div>
       </section>
 

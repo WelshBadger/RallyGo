@@ -58,8 +58,12 @@ export default function EventPage() {
   }, [rallyId])
 
   // Check notification permission status
+  // On iOS, push only works when installed to home screen (standalone mode)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
   useEffect(() => {
     if (!user || !('Notification' in window) || !('serviceWorker' in navigator)) return
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    if (isIOS && !isStandalone) return
     setNotifStatus(Notification.permission)
   }, [user])
 

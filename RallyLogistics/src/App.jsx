@@ -6,6 +6,7 @@ import RallySelectPage from './pages/RallySelectPage'
 import PackPage from './pages/PackPage'
 import SharedPackPage from './pages/SharedPackPage'
 import AccountPage from './pages/AccountPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -23,7 +24,7 @@ export default function App() {
         <Route path="/" element={<PrivateRoute><RallySelectPage /></PrivateRoute>} />
         <Route path="/pack/:rallyId" element={<PrivateRoute><PackPage /></PrivateRoute>} />
         <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>
   )

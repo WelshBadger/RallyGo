@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import BackButton from '../components/BackButton'
 
 function fmtDate(str) {
   return new Date(str).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -112,18 +113,15 @@ export default function NewsPostPage() {
   if (!post) return (
     <div className="max-w-2xl mx-auto px-4 py-10 text-center">
       <p className="text-white/40">Post not found.</p>
-      <Link to="/news" className="text-rl-accent text-sm mt-2 inline-block">← Back to news</Link>
+      <BackButton to="/news" label="News" />
     </div>
   )
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
-      <Link to="/news" className="text-white/30 hover:text-white/60 text-xs flex items-center gap-1 mb-6 no-underline transition-colors">
-        <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
-          <path fillRule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z" clipRule="evenodd" />
-        </svg>
-        All news
-      </Link>
+      <div className="mb-6">
+        <BackButton to="/news" label="All news" />
+      </div>
 
       {post.image_url && (
         <div className="rounded-2xl overflow-hidden bg-black/20 mb-8 border border-white/8">

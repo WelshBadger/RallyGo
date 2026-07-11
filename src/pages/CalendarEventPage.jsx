@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatDateRange } from '../lib/dateUtils'
+import BackButton from '../components/BackButton'
 
 const SURFACE = {
   gravel:      { bg: 'bg-amber-500',  light: 'bg-amber-500/15',  border: 'border-amber-500/40',  text: 'text-amber-300',  dot: 'bg-amber-400',  label: 'Gravel' },
   tarmac:      { bg: 'bg-blue-500',   light: 'bg-blue-500/15',   border: 'border-blue-500/40',   text: 'text-blue-300',   dot: 'bg-blue-400',   label: 'Tarmac' },
   closed_road: { bg: 'bg-violet-500', light: 'bg-violet-500/15', border: 'border-violet-500/40', text: 'text-violet-300', dot: 'bg-violet-400', label: 'Closed Road' },
+  road_rally:  { bg: 'bg-green-500',  light: 'bg-green-500/15',  border: 'border-green-500/40',  text: 'text-green-300',  dot: 'bg-green-400',  label: 'Road Rally' },
   mixed:       { bg: 'bg-white/30',   light: 'bg-white/5',       border: 'border-white/20',      text: 'text-white/50',   dot: 'bg-white/40',   label: 'Mixed' },
 }
 
@@ -43,7 +45,7 @@ export default function CalendarEventPage() {
   if (!event) return (
     <main className="max-w-2xl mx-auto px-4 py-10 text-center">
       <p className="text-white/40">Event not found.</p>
-      <Link to="/calendar" className="text-rl-accent text-sm mt-4 inline-block">← Back to calendar</Link>
+      <BackButton to="/calendar" label="Calendar" />
     </main>
   )
 
@@ -57,12 +59,9 @@ export default function CalendarEventPage() {
     <main className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
 
       {/* Back */}
-      <Link to="/calendar" className="inline-flex items-center gap-1.5 text-white/40 hover:text-white text-sm mb-8 no-underline transition-colors">
-        <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-          <path fillRule="evenodd" d="M7.78 4.22a.75.75 0 010 1.06L5.06 8l2.72 2.72a.75.75 0 11-1.06 1.06L3.47 8.53a.75.75 0 010-1.06l3.25-3.25a.75.75 0 011.06 0z" />
-        </svg>
-        Calendar
-      </Link>
+      <div className="mb-8">
+        <BackButton to="/calendar" label="Calendar" />
+      </div>
 
       {/* Card */}
       <div className="bg-white/3 border border-white/10 rounded-2xl overflow-hidden">

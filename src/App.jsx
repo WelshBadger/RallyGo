@@ -15,6 +15,7 @@ import ManageEventPage from './pages/ManageEventPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import AdminPage from './pages/AdminPage'
 import NewsPostPage, { NewsIndexPage } from './pages/NewsPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 function ProtectedOrganiser({ children }) {
   const { user, profile, loading } = useAuth()
@@ -143,7 +144,7 @@ export default function App() {
         <Route path="/admin" element={
           <ProtectedAdmin><AdminPage /></ProtectedAdmin>
         } />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </div>
   )
