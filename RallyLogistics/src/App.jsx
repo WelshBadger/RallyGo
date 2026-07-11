@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import LoginPage from './pages/LoginPage'
@@ -10,8 +10,9 @@ import NotFoundPage from './pages/NotFoundPage'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
+  const location = useLocation()
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-6 h-6 border-2 border-white/10 border-t-rl-accent rounded-full animate-spin" /></div>
-  return user ? children : <Navigate to="/login" replace />
+  return user ? children : <Navigate to="/login" state={{ returnTo: location.pathname }} replace />
 }
 
 export default function App() {

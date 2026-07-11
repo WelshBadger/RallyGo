@@ -199,20 +199,21 @@ export default function EventPage() {
           </div>
         )}
 
-        {/* Rally Logistics button for logged-in users */}
-        {user && (
-          <div className="flex items-center justify-between py-3 border-t border-white/8">
-            <span className="text-white/40 text-xs">Team logistics platform</span>
-            <a
-              href="https://project-z92lx.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-rl-accent hover:text-white transition-colors font-medium"
-            >
-              Open Rally Logistics →
-            </a>
+        {/* Rally Logistics deep-link — visible to everyone */}
+        <div className="flex items-center justify-between py-3 border-t border-white/8">
+          <div>
+            <span className="text-white/60 text-xs font-medium block">Team Logistics</span>
+            <span className="text-white/30 text-[10px]">Fuel, recce, schedule & team chat</span>
           </div>
-        )}
+          <a
+            href={`${import.meta.env.VITE_LOGISTICS_URL || 'https://project-z92lx.vercel.app'}/pack/${rallyId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rl-btn-ghost text-xs gap-1.5 flex-shrink-0"
+          >
+            Open →
+          </a>
+        </div>
 
         {/* Subtle granted indicator in header */}
         {user && notifStatus === 'granted' && (

@@ -49,12 +49,12 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4 bg-rl-card border border-white/10 rounded-2xl p-6">
           <div>
             <label className="text-white/50 text-xs uppercase tracking-wide mb-1.5 block">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            <input type="email" name="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)}
               className="rl-input" placeholder="you@example.com" required />
           </div>
           <div>
             <label className="text-white/50 text-xs uppercase tracking-wide mb-1.5 block">Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+            <input type="password" name="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={e => setPassword(e.target.value)}
               className="rl-input" placeholder="••••••••" required minLength={6} />
           </div>
           <button type="submit" disabled={loading} className="rl-btn-primary w-full justify-center disabled:opacity-50">

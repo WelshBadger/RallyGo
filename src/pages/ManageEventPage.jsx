@@ -142,7 +142,9 @@ export default function ManageEventPage() {
         ).catch(() => {})
       }
 
-      // Rally Guide PDFs: also run extraction (same data as regs + FI, overlaps are expected)
+      // Rally Guide PDFs: extract regulations-format data only.
+      // Do NOT run extract-final-instructions here — that would overwrite any real FI
+      // data that the organiser already uploaded, which contains more authoritative times.
       if (activeSection === 'rally-guide' && docType === 'pdf' && form.file) {
         const base64 = await new Promise((resolve, reject) => {
           const reader = new FileReader()
@@ -151,17 +153,18 @@ export default function ManageEventPage() {
           reader.readAsDataURL(form.file)
         })
         const { data: { session } } = await supabase.auth.getSession()
-        const headers = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        }
-        const body = JSON.stringify({ rallyId, pdfBase64: base64 })
-        // Fire both extractions in parallel — don't block the UI
-        Promise.all([
-          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-regulations`, { method: 'POST', headers, body }).catch(() => {}),
-          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-final-instructions`, { method: 'POST', headers, body }).catch(() => {}),
-        ]).then(() => {
+        fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-regulations`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({ rallyId, pdfBase64: base64 }),
+          }
+        ).then(() => {
           toast.success('Rally Guide info extracted in background')
         }).catch(() => {})
       }
