@@ -265,7 +265,7 @@ export default function PackPage() {
           {tab === 'pre-event' && <PreEventTab fi={fi} rally={rally} />}
           {tab === 'locations' && <LocationsTab pack={pack} fi={fi} rally={rally} onSave={save} />}
           {tab === 'fuel'      && <FuelTab pack={pack} onSave={save} />}
-          {tab === 'recce'     && <RecceTab pack={pack} stages={stages} onSave={save} />}
+          {tab === 'recce'     && <RecceTab pack={pack} stages={stages} rally={rally} onSave={save} />}
           {tab === 'car-setup' && <CarSetupTab pack={pack} rally={rally} onSave={save} />}
         </>
       )}
@@ -792,9 +792,11 @@ function FuelCard({ label, data, onChange, onDelete, fixed }) {
 
 // ─── Recce Tab ───────────────────────────────────────────────────────────────
 
-function RecceTab({ pack, stages, onSave }) {
+function RecceTab({ pack, stages, rally, onSave }) {
   const [notes, setNotes] = useState(pack?.recce_notes || {})
   const [dirty, setDirty] = useState(false)
+  const recce = rally?.regulations_data?.recce
+  const reconDate = rally?.regulations_data?.reconDate
 
   function update(num, val) {
     setNotes(n => ({ ...n, [num]: val }))
@@ -803,6 +805,55 @@ function RecceTab({ pack, stages, onSave }) {
 
   return (
     <div className="space-y-4">
+
+      {/* Extracted recce info from regulations */}
+      {(recce?.dates?.length > 0 || recce?.speedLimit || recce?.passes || recce?.notes || reconDate) && (
+        <div className="bg-rl-card border border-white/10 rounded-xl overflow-hidden">
+          <div className="px-4 py-2.5 bg-white/4 border-b border-white/8">
+            <p className="text-white/50 text-[11px] uppercase tracking-widest font-medium">From regulations</p>
+          </div>
+          <div className="divide-y divide-white/8">
+            {recce?.dates?.length > 0 ? (
+              <div className="px-4 py-3">
+                <p className="text-white/35 text-[10px] uppercase tracking-wide mb-2">Sessions</p>
+                <div className="space-y-2">
+                  {recce.dates.map((d, i) => (
+                    <div key={i}>
+                      <p className="text-white text-sm font-medium">{d.day}</p>
+                      {d.times && <p className="text-white/60 text-xs">{d.times}</p>}
+                      {d.startLocation && <p className="text-white/40 text-xs">{d.startLocation}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : reconDate ? (
+              <div className="px-4 py-3">
+                <p className="text-white/35 text-[10px] uppercase tracking-wide mb-1">Date</p>
+                <p className="text-white text-sm">{reconDate}</p>
+              </div>
+            ) : null}
+            {recce?.speedLimit && (
+              <div className="px-4 py-3">
+                <p className="text-white/35 text-[10px] uppercase tracking-wide mb-1">Speed limit</p>
+                <p className="text-white text-sm">{recce.speedLimit}</p>
+              </div>
+            )}
+            {recce?.passes && (
+              <div className="px-4 py-3">
+                <p className="text-white/35 text-[10px] uppercase tracking-wide mb-1">Passes</p>
+                <p className="text-white text-sm">{recce.passes}</p>
+              </div>
+            )}
+            {recce?.notes && (
+              <div className="px-4 py-3">
+                <p className="text-white/35 text-[10px] uppercase tracking-wide mb-1">Rules</p>
+                <p className="text-white/70 text-xs leading-relaxed">{recce.notes}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-white font-medium">Recce notes</h2>
@@ -1093,10 +1144,34 @@ function TeamChatTab({ rallyId, user }) {
   const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [queueCount, setQueueCount] = useState(0)
+  const [lightbox, setLightbox] = useState(null)
   const bottomRef = useRef(null)
+  const fileRef = useRef(null)
+  const QUEUE_KEY = `rl:chat:queue:${rallyId}`
+
+  function getQueue() {
+    try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]') } catch { return [] }
+  }
+  function saveQueue(q) {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(q))
+    setQueueCount(q.length)
+  }
+
+  async function flushQueue() {
+    const q = getQueue()
+    if (q.length === 0) return
+    for (const item of q) {
+      await supabase.from('team_chat_messages').insert(item)
+    }
+    saveQueue([])
+  }
 
   useEffect(() => {
-    // Load latest messages
+    setQueueCount(getQueue().length)
+
     supabase
       .from('team_chat_messages')
       .select('*')
@@ -1105,7 +1180,6 @@ function TeamChatTab({ rallyId, user }) {
       .limit(200)
       .then(({ data }) => setMessages(data || []))
 
-    // Subscribe to realtime inserts
     const channel = supabase
       .channel(`team-chat-${rallyId}`)
       .on('postgres_changes', {
@@ -1118,26 +1192,59 @@ function TeamChatTab({ rallyId, user }) {
       })
       .subscribe()
 
-    return () => supabase.removeChannel(channel)
+    function handleOnline() {
+      setIsOnline(true)
+      flushQueue()
+    }
+    function handleOffline() { setIsOnline(false) }
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      supabase.removeChannel(channel)
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
   }, [rallyId])
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  async function send() {
-    const msg = text.trim()
-    if (!msg || sending) return
-    setSending(true)
-    setText('')
-    await supabase.from('team_chat_messages').insert({
+  async function send(msg, imageUrl = null) {
+    if (!msg && !imageUrl) return
+    const row = {
       rally_id: rallyId,
       user_id: user.id,
       user_email: user.email,
-      message: msg,
-    })
+      message: msg || null,
+      image_url: imageUrl || null,
+    }
+    if (!navigator.onLine) {
+      saveQueue([...getQueue(), row])
+      setText('')
+      return
+    }
+    setSending(true)
+    setText('')
+    await supabase.from('team_chat_messages').insert(row)
     setSending(false)
+  }
+
+  async function handleImageUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const ext = file.name.split('.').pop()
+    const path = `${rallyId}/${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('team-chat-images').upload(path, file, { upsert: true })
+    if (error) { toast.error('Upload failed'); setUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('team-chat-images').getPublicUrl(path)
+    await send(text.trim() || null, publicUrl)
+    setText('')
+    setUploading(false)
+    e.target.value = ''
   }
 
   function fmtTime(ts) {
@@ -1148,6 +1255,23 @@ function TeamChatTab({ rallyId, user }) {
 
   return (
     <div className="flex flex-col" style={{ height: 'calc(100vh - 280px)', minHeight: '420px' }}>
+      {/* Offline / queue indicator */}
+      {(!isOnline || queueCount > 0) && (
+        <div className={`mb-3 px-3 py-2 rounded-xl text-xs flex items-center gap-2 ${
+          !isOnline
+            ? 'bg-amber-500/10 border border-amber-500/25 text-amber-400'
+            : 'bg-green-500/10 border border-green-500/25 text-green-400'
+        }`}>
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${!isOnline ? 'bg-amber-400' : 'bg-green-400 animate-pulse'}`} />
+          {!isOnline
+            ? queueCount > 0
+              ? `Offline — ${queueCount} message${queueCount !== 1 ? 's' : ''} queued, will send when back online`
+              : 'Offline — messages will queue and send when you\'re back online'
+            : `Sending ${queueCount} queued message${queueCount !== 1 ? 's' : ''}…`
+          }
+        </div>
+      )}
+
       {/* Messages list */}
       <div className="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
         {messages.length === 0 ? (
@@ -1171,12 +1295,25 @@ function TeamChatTab({ rallyId, user }) {
                 {!isMe(m) && (
                   <p className="text-white/35 text-[10px] px-1 leading-none">{m.user_email?.split('@')[0] || 'Team'}</p>
                 )}
-                <div className={`px-3.5 py-2.5 text-sm leading-relaxed break-words ${
+                <div className={`text-sm leading-relaxed break-words ${
+                  m.image_url && !m.message ? 'p-1' : 'px-3.5 py-2.5'
+                } ${
                   isMe(m)
                     ? 'bg-[#22c55e]/12 border border-[#22c55e]/25 text-white rounded-2xl rounded-tr-sm'
                     : 'bg-white/8 border border-white/10 text-white/85 rounded-2xl rounded-tl-sm'
                 }`}>
-                  {m.message}
+                  {m.image_url && (
+                    <button onClick={() => setLightbox(m.image_url)} className="block">
+                      <img
+                        src={m.image_url}
+                        alt="Shared image"
+                        className="rounded-xl max-w-full max-h-60 object-cover"
+                      />
+                    </button>
+                  )}
+                  {m.message && (
+                    <span className={m.image_url ? 'block px-2.5 pb-1 pt-1.5' : ''}>{m.message}</span>
+                  )}
                 </div>
                 <p className="text-white/20 text-[10px] px-1">{fmtTime(m.created_at)}</p>
               </div>
@@ -1189,20 +1326,44 @@ function TeamChatTab({ rallyId, user }) {
       {/* Input */}
       <div className="pt-4 border-t border-white/8 mt-2">
         <div className="flex gap-2 items-end">
+          {/* Photo upload button */}
+          <label className={`flex-shrink-0 w-10 h-[42px] rounded-xl border flex items-center justify-center cursor-pointer transition-all ${
+            uploading
+              ? 'bg-white/5 border-white/10 cursor-not-allowed'
+              : 'bg-white/7 border-white/15 hover:bg-white/12 hover:border-white/25'
+          }`}>
+            {uploading ? (
+              <span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+            ) : (
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-white/50">
+                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"/>
+              </svg>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleImageUpload}
+              disabled={uploading}
+            />
+          </label>
+
           <textarea
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(text.trim()) }
             }}
-            placeholder="Message your team… (Enter to send)"
+            placeholder={isOnline ? 'Message your team… (Enter to send)' : 'Offline — message will be queued'}
             rows={1}
             className="rl-input flex-1 text-sm resize-none"
             style={{ minHeight: '42px', maxHeight: '120px' }}
           />
           <button
-            onClick={send}
-            disabled={!text.trim() || sending}
+            onClick={() => send(text.trim())}
+            disabled={(!text.trim() && !uploading) || sending}
             className="flex-shrink-0 w-10 h-[42px] rounded-xl bg-[#22c55e]/20 border border-[#22c55e]/35 hover:bg-[#22c55e]/30 disabled:opacity-30 transition-all flex items-center justify-center"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-[#22c55e]">
@@ -1210,8 +1371,19 @@ function TeamChatTab({ rallyId, user }) {
             </svg>
           </button>
         </div>
-        <p className="text-white/15 text-[10px] mt-1.5 px-1">Shift+Enter for new line · messages are shared with your whole team</p>
+        <p className="text-white/15 text-[10px] mt-1.5 px-1">Shift+Enter for new line · tap 🖼 for photos · messages shared with whole team</p>
       </div>
+
+      {/* Image lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <img src={lightbox} alt="Chat image" className="max-w-full max-h-full rounded-xl object-contain" />
+          <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-lg">✕</button>
+        </div>
+      )}
     </div>
   )
 }
