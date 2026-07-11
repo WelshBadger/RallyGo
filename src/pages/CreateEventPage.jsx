@@ -17,6 +17,8 @@ export default function CreateEventPage() {
     endDate: '',
     location: '',
     series: '',
+    surface: 'gravel',
+    visibility: 'public',
   })
   const [loading, setLoading] = useState(false)
 
@@ -39,6 +41,8 @@ export default function CreateEventPage() {
             end_date: form.endDate || null,
             location: form.location,
             series: form.series || null,
+            surface: form.surface,
+            visibility: form.visibility,
             organiser_id: user.id,
             status: 'active',
           })
@@ -59,6 +63,8 @@ export default function CreateEventPage() {
           end_date: form.endDate || null,
           location: form.location,
           series: form.series || null,
+          surface: form.surface,
+          visibility: form.visibility,
           organiser_id: user.id,
           status: 'draft',
         })
@@ -161,6 +167,63 @@ export default function CreateEventPage() {
             placeholder="e.g. British Rally Championship"
             className="rl-input"
           />
+        </div>
+
+        <div>
+          <label className="rl-label">Surface type</label>
+          <div className="flex gap-2">
+            {[
+              { key: 'gravel',     label: 'Gravel',     color: '#f59e0b' },
+              { key: 'tarmac',     label: 'Tarmac',     color: '#3b82f6' },
+              { key: 'road_rally', label: 'Road Rally', color: '#22c55e' },
+              { key: 'mixed',      label: 'Mixed',      color: '#9ca3af' },
+            ].map(s => (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => setForm(f => ({ ...f, surface: s.key }))}
+                style={form.surface === s.key ? { borderColor: s.color, color: s.color, background: s.color + '18' } : {}}
+                className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-all ${
+                  form.surface === s.key
+                    ? 'border-current'
+                    : 'border-white/10 text-white/40 hover:border-white/25 hover:text-white/60'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="rl-label">Visibility</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setForm(f => ({ ...f, visibility: 'public' }))}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-medium border transition-all ${
+                form.visibility === 'public'
+                  ? 'border-rl-accent text-rl-accent bg-rl-accent/10'
+                  : 'border-white/10 text-white/40 hover:border-white/25 hover:text-white/60'
+              }`}
+            >
+              🌐 Public — appears on homepage
+            </button>
+            <button
+              type="button"
+              onClick={() => setForm(f => ({ ...f, visibility: 'private' }))}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-medium border transition-all ${
+                form.visibility === 'private'
+                  ? 'border-white/50 text-white bg-white/8'
+                  : 'border-white/10 text-white/40 hover:border-white/25 hover:text-white/60'
+              }`}
+            >
+              🔒 Private — share link only
+            </button>
+          </div>
+          {form.visibility === 'private' && (
+            <p className="text-white/30 text-xs mt-1.5">Only people with a direct link can access this event. It won't appear on the homepage or calendar.</p>
+          )}
         </div>
 
         {/* Price summary — hidden for super admin */}

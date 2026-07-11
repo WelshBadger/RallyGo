@@ -38,7 +38,7 @@ export default function HomePage() {
       const today = new Date().toISOString().split('T')[0]
       const [{ data: newsData }, { data: rallyData }, { data: settings }] = await Promise.all([
         supabase.from('news_posts').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(1),
-        supabase.from('rallies').select('*').eq('status', 'active')
+        supabase.from('rallies').select('*').eq('status', 'active').eq('visibility', 'public')
           .or(`end_date.gte.${today},and(end_date.is.null,date.gte.${today})`)
           .order('date', { ascending: true }).limit(20),
         supabase.from('site_settings').select('show_news_on_homepage').eq('id', 1).single(),
