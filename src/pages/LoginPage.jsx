@@ -46,6 +46,7 @@ export default function LoginPage() {
             <label className="rl-label">Email</label>
             <input
               type="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -59,6 +60,7 @@ export default function LoginPage() {
             <label className="rl-label">Password</label>
             <input
               type="password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
