@@ -57,47 +57,20 @@ export default function AccountPage() {
         </div>
       </div>
 
-      {/* What's included */}
-      <div className="bg-rl-card border border-white/10 rounded-2xl p-5">
-        <p className="text-white/40 text-xs uppercase tracking-widest font-semibold mb-4">What's included</p>
-        <div className="space-y-3">
-          {[
-            'Team contacts — mechanics, crew and co-driver details',
-            'Rally schedule — day-by-day programme auto-populated from Final Instructions',
-            'Stage notes — crew notes and tyre strategy per stage',
-            'Pre-event info — sign-on, scrutineering and noise testing times',
-            'Locations — service park, hotel, refuel and more with map links',
-            'Fuel plan — starting fuel and refuel stops with totals',
-            'Recce notes — per-stage notes from reconnaissance',
-            'Live results — load any results URL directly in the app',
-            'Team sharing — share your pack via QR code or link',
-          ].map((item, i) => (
-            <div key={i} className="flex items-start gap-2.5">
-              <span className="text-rl-accent mt-0.5 flex-shrink-0 text-xs">✓</span>
-              <p className="text-white/60 text-sm">{item}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Future pricing */}
       <div className="bg-rl-card border border-white/10 rounded-2xl p-5">
         <p className="text-white/40 text-xs uppercase tracking-widest font-semibold mb-3">From 2027</p>
         <div className="flex items-baseline gap-1 mb-2">
-          <span className="text-white font-bold text-3xl">£4.99</span>
+          <span className="text-white text-2xl font-bold">£4.99</span>
           <span className="text-white/40 text-sm">/ year</span>
         </div>
-        <p className="text-white/40 text-xs leading-relaxed">
-          Full access for an entire rally season. Payment details will be added to your account page before January 2027.
-        </p>
+        <p className="text-white/40 text-xs leading-relaxed">Full access for an entire season. Cancel any time.</p>
       </div>
 
       {/* Sign out */}
-      <button onClick={handleSignOut}
-        className="w-full bg-white/4 hover:bg-white/8 border border-white/10 rounded-xl py-3 text-white/50 hover:text-white/80 text-sm transition-all">
+      <button onClick={handleSignOut} className="rl-btn-danger w-full justify-center">
         Sign out
       </button>
-
     </main>
   )
 }

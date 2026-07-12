@@ -206,7 +206,7 @@ export default function EventPage() {
             <span className="text-white/30 text-[10px]">Fuel, recce, schedule & team chat</span>
           </div>
           <a
-            href={`${import.meta.env.VITE_LOGISTICS_URL || 'https://project-z92lx.vercel.app'}/pack/${rallyId}`}
+            href={`https://rallylogistics.rallygo.co.uk/pack/${rallyId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="rl-btn-ghost text-xs gap-1.5 flex-shrink-0"
