@@ -3,10 +3,12 @@
 @tailwind utilities;
 
 @layer base {
-  html {
+  html, body {
     background-color: #0f0f0f;
     color: #ffffff;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   * {
