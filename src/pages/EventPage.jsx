@@ -170,6 +170,17 @@ export default function EventPage() {
           )}
         </div>
 
+        {/* Logo */}
+        {rally.logo_url && (
+          <div className="mb-3">
+            <img
+              src={rally.logo_url}
+              alt=""
+              className="h-12 w-auto object-contain opacity-90"
+            />
+          </div>
+        )}
+
         {/* Name */}
         <h1 className="text-2xl sm:text-3xl font-medium text-white mb-2">{rally.name}</h1>
 

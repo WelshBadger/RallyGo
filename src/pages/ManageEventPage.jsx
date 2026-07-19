@@ -8,7 +8,7 @@ import { formatDistanceToNow } from '../lib/dateUtils'
 
 const SECTIONS = [
   { key: 'pre-event',  label: 'Pre-event info' },
-  { key: 'route',      label: 'Route information' },
+  { key: 'route',      label: 'Event schedule' },
   { key: 'bulletins',  label: 'Live bulletins' },
   { key: 'recce',      label: 'Recce' },
   { key: 'team',       label: 'Organising team' },
@@ -45,6 +45,7 @@ export default function ManageEventPage() {
   const [savingSurface, setSavingSurface] = useState(false)
   const [visibility, setVisibility] = useState('public')
   const [savingVisibility, setSavingVisibility] = useState(false)
+  const [logoUploading, setLogoUploading] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -213,6 +214,34 @@ export default function ManageEventPage() {
     setRally(r => ({ ...r, visibility: newVisibility }))
     setSavingVisibility(false)
     toast.success(newVisibility === 'public' ? 'Event is now public' : 'Event is now private')
+  }
+
+  async function handleLogoUpload(file) {
+    if (!file) return
+    setLogoUploading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${rallyId}/logo_${Date.now()}.${ext}`
+      const { error: uploadErr } = await supabase.storage
+        .from('rally-logos')
+        .upload(path, file, { contentType: file.type, upsert: true })
+      if (uploadErr) throw uploadErr
+      const { data: { publicUrl } } = supabase.storage.from('rally-logos').getPublicUrl(path)
+      await supabase.from('rallies').update({ logo_url: publicUrl }).eq('id', rallyId)
+      setRally(r => ({ ...r, logo_url: publicUrl }))
+      toast.success('Logo uploaded')
+    } catch (err) {
+      toast.error(err.message || 'Upload failed')
+    } finally {
+      setLogoUploading(false)
+    }
+  }
+
+  async function handleLogoRemove() {
+    if (!confirm('Remove the rally logo?')) return
+    await supabase.from('rallies').update({ logo_url: null }).eq('id', rallyId)
+    setRally(r => ({ ...r, logo_url: null }))
+    toast.success('Logo removed')
   }
 
   async function saveWebsiteUrl() {
@@ -535,6 +564,43 @@ export default function ManageEventPage() {
             🔒 Private — share link only
           </button>
         </div>
+      </div>
+
+      {/* Rally Logo */}
+      <div className="bg-rl-card border border-white/10 rounded-xl p-4 mb-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-white font-medium text-sm">Rally Logo</h2>
+            <p className="text-white/35 text-xs mt-0.5">Shown in the event page header.</p>
+          </div>
+          {rally.logo_url && (
+            <img src={rally.logo_url} alt="Logo preview" className="h-10 w-auto object-contain rounded-lg bg-white/5 p-1 max-w-[80px]" />
+          )}
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={e => handleLogoUpload(e.target.files[0])}
+            disabled={logoUploading}
+            className="flex-1 text-xs text-white/50 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white/70 cursor-pointer disabled:opacity-50"
+          />
+          {logoUploading && (
+            <span className="text-white/40 text-xs flex items-center gap-2 flex-shrink-0">
+              <span className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              Uploading…
+            </span>
+          )}
+        </div>
+        {rally.logo_url && !logoUploading && (
+          <button
+            type="button"
+            onClick={handleLogoRemove}
+            className="mt-2 text-xs text-red-400/60 hover:text-red-400 transition-colors"
+          >
+            Remove logo
+          </button>
+        )}
       </div>
 
       {/* Regulations card */}
@@ -985,3 +1051,4 @@ export default function ManageEventPage() {
     </main>
   )
 }
+   

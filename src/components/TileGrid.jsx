@@ -14,7 +14,7 @@ const SECTIONS = [
   },
   {
     key: 'route',
-    label: 'Route information',
+    label: 'Event schedule',
     sub: 'Maps · Road book · Stages',
     color: '#378ADD',
     icon: (

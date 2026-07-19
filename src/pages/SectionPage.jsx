@@ -6,7 +6,7 @@ import BackButton from '../components/BackButton'
 
 const SECTION_META = {
   'pre-event':  { label: 'Pre-event info',          color: '#E24B4A' },
-  'route':      { label: 'Route information',        color: '#378ADD' },
+  'route':      { label: 'Event schedule',             color: '#378ADD' },
   'bulletins':  { label: 'Live bulletins & documents', color: '#E24B4A' },
   'recce':      { label: 'Recce',                   color: '#10b981' },
   'team':       { label: 'Organising team',          color: '#1D9E75' },
