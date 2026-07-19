@@ -1051,4 +1051,3 @@ export default function ManageEventPage() {
     </main>
   )
 }
-   
