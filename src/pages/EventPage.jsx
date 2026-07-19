@@ -374,7 +374,7 @@ export default function EventPage() {
       {/* Section tiles */}
       <section className="mb-6">
         <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium mb-3">Event sections</p>
-        <TileGrid rallyId={rallyId} newCounts={newCounts} />
+        <TileGrid rallyId={rallyId} newCounts={newCounts} sportityUrl={rally?.sportity_url} />
       </section>
 
       {/* Latest bulletins */}

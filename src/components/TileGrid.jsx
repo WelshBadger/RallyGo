@@ -2,6 +2,17 @@ import { Link } from 'react-router-dom'
 
 const SECTIONS = [
   {
+    key: 'documents',
+    label: 'Documents',
+    sub: 'Permits · Regs · Finals',
+    color: '#6366f1',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />
+      </svg>
+    ),
+  },
+  {
     key: 'pre-event',
     label: 'Pre-event info',
     sub: 'Entry list · Schedule · Regs',
@@ -102,15 +113,20 @@ const SECTIONS = [
   },
 ]
 
-export default function TileGrid({ rallyId, newCounts = {} }) {
+export default function TileGrid({ rallyId, newCounts = {}, sportityUrl }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
       {SECTIONS.map((section) => {
         const hasNew = (newCounts[section.key] || 0) > 0
+        const isExternalBulletins = section.key === 'bulletins' && sportityUrl
+        const Comp = isExternalBulletins ? 'a' : Link
+        const compProps = isExternalBulletins
+          ? { href: sportityUrl, target: '_blank', rel: 'noopener noreferrer' }
+          : { to: `/event/${rallyId}/${section.key}` }
         return (
-          <Link
+          <Comp
             key={section.key}
-            to={`/event/${rallyId}/${section.key}`}
+            {...compProps}
             className="group relative bg-rl-card border border-white/10 rounded-2xl p-4 sm:p-4 hover:border-white/25 active:scale-[0.97] transition-all duration-150 no-underline min-h-[120px] flex flex-col"
           >
             {/* Coloured accent strip */}
@@ -141,7 +157,7 @@ export default function TileGrid({ rallyId, newCounts = {} }) {
                 <path fillRule="evenodd" d="M8.22 2.97a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06l2.97-2.97H3.75a.75.75 0 010-1.5h7.44L8.22 4.03a.75.75 0 010-1.06z" clipRule="evenodd" />
               </svg>
             </div>
-          </Link>
+          </Comp>
         )
       })}
     </div>

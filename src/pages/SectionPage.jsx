@@ -5,8 +5,9 @@ import { formatDistanceToNow } from '../lib/dateUtils'
 import BackButton from '../components/BackButton'
 
 const SECTION_META = {
+  'documents':  { label: 'Documents',               color: '#6366f1' },
   'pre-event':  { label: 'Pre-event info',          color: '#E24B4A' },
-  'route':      { label: 'Event schedule',             color: '#378ADD' },
+  'route':      { label: 'Event schedule',           color: '#378ADD' },
   'bulletins':  { label: 'Live bulletins & documents', color: '#E24B4A' },
   'recce':      { label: 'Recce',                   color: '#10b981' },
   'team':       { label: 'Organising team',          color: '#1D9E75' },
@@ -28,14 +29,17 @@ export default function SectionPage() {
     localStorage.setItem(`rallygo:seen:${rallyId}:${section}`, new Date().toISOString())
 
     async function load() {
+      let docsQuery = supabase
+        .from('rally_documents')
+        .select('*')
+        .eq('rally_id', rallyId)
+        .order('created_at', { ascending: false })
+      if (section !== 'documents') {
+        docsQuery = docsQuery.eq('section', section)
+      }
       const [{ data: rallyData }, { data: documents }] = await Promise.all([
         supabase.from('rallies').select('*').eq('id', rallyId).single(),
-        supabase
-          .from('rally_documents')
-          .select('*')
-          .eq('rally_id', rallyId)
-          .eq('section', section)
-          .order('created_at', { ascending: false }),
+        docsQuery,
       ])
       setRally(rallyData)
       setDocs(documents || [])
@@ -73,6 +77,71 @@ export default function SectionPage() {
         <div className="w-1 h-7 rounded-full" style={{ background: meta.color }} />
         <h1 className="text-xl font-medium text-white">{meta.label}</h1>
       </div>
+
+      {/* Documents: all uploaded docs + main PDFs */}
+      {!loading && section === 'documents' && (() => {
+        const mainPdfs = [
+          rally?.regulations_pdf_url && { label: 'Supplementary Regulations', sub: 'Full regulations PDF', url: rally.regulations_pdf_url },
+          rally?.final_instructions_pdf_url && { label: 'Final Instructions', sub: 'Final instructions PDF', url: rally.final_instructions_pdf_url },
+        ].filter(Boolean)
+
+        const allDocs = docs || []
+        const hasAnything = mainPdfs.length > 0 || allDocs.length > 0
+
+        if (!hasAnything) return (
+          <p className="text-white/30 text-sm">No documents have been published yet.</p>
+        )
+
+        const docIcon = (
+          <svg className="w-4 h-4 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        )
+        const linkIcon = (
+          <svg className="w-4 h-4 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+          </svg>
+        )
+        const arrowIcon = (
+          <svg className="w-4 h-4 text-white/20 group-hover:text-white/50 transition-colors" viewBox="0 0 16 16" fill="currentColor">
+            <path fillRule="evenodd" d="M8.22 2.97a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06l2.97-2.97H3.75a.75.75 0 010-1.5h7.44L8.22 4.03a.75.75 0 010-1.06z" clipRule="evenodd" />
+          </svg>
+        )
+
+        return (
+          <div className="space-y-2">
+            {mainPdfs.map((pdf, i) => (
+              <a key={i} href={pdf.url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-rl-card border border-white/10 rounded-xl px-4 py-3.5 hover:border-white/25 transition-all group no-underline">
+                <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">{docIcon}</div>
+                <div className="flex-1">
+                  <p className="text-white text-sm font-medium">{pdf.label}</p>
+                  <p className="text-white/35 text-xs mt-0.5">{pdf.sub}</p>
+                </div>
+                {arrowIcon}
+              </a>
+            ))}
+            {allDocs.map(doc => {
+              const url = doc.file_url || doc.link_url
+              if (!url) return null
+              return (
+                <a key={doc.id} href={url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-3 bg-rl-card border border-white/10 rounded-xl px-4 py-3.5 hover:border-white/25 transition-all group no-underline">
+                  <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                    {doc.link_url && !doc.file_url ? linkIcon : docIcon}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-medium">{doc.title}</p>
+                    <p className="text-white/35 text-xs mt-0.5 capitalize">{doc.section?.replace('-', ' ')}</p>
+                  </div>
+                  {arrowIcon}
+                </a>
+              )
+            })}
+          </div>
+        )
+      })()}
 
       {/* Pre-event: auto info from regulations */}
       {!loading && section === 'pre-event' && rally?.regulations_data && (

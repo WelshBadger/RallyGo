@@ -7,6 +7,7 @@ import BackButton from '../components/BackButton'
 import { formatDistanceToNow } from '../lib/dateUtils'
 
 const SECTIONS = [
+  { key: 'documents',  label: 'Documents' },
   { key: 'pre-event',  label: 'Pre-event info' },
   { key: 'route',      label: 'Event schedule' },
   { key: 'bulletins',  label: 'Live bulletins' },
@@ -41,6 +42,8 @@ export default function ManageEventPage() {
   const [entryPreview, setEntryPreview] = useState(null)
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [savingUrl, setSavingUrl] = useState(false)
+  const [sportityUrl, setSportityUrl] = useState('')
+  const [savingSportityUrl, setSavingSportityUrl] = useState(false)
   const [surface, setSurface] = useState('gravel')
   const [savingSurface, setSavingSurface] = useState(false)
   const [visibility, setVisibility] = useState('public')
@@ -52,6 +55,7 @@ export default function ManageEventPage() {
       const { data: r } = await supabase.from('rallies').select('*').eq('id', rallyId).single()
       setRally(r)
       setWebsiteUrl(r?.website_url || '')
+      setSportityUrl(r?.sportity_url || '')
       setSurface(r?.surface || 'gravel')
       setVisibility(r?.visibility || 'public')
       loadDocs(activeSection)
@@ -242,6 +246,15 @@ export default function ManageEventPage() {
     await supabase.from('rallies').update({ logo_url: null }).eq('id', rallyId)
     setRally(r => ({ ...r, logo_url: null }))
     toast.success('Logo removed')
+  }
+
+  async function saveSportityUrl() {
+    setSavingSportityUrl(true)
+    const val = sportityUrl.trim() || null
+    await supabase.from('rallies').update({ sportity_url: val }).eq('id', rallyId)
+    setRally(r => ({ ...r, sportity_url: val }))
+    toast.success(val ? 'Sportity URL saved' : 'Sportity URL cleared')
+    setSavingSportityUrl(false)
   }
 
   async function saveWebsiteUrl() {
@@ -600,6 +613,34 @@ export default function ManageEventPage() {
           >
             Remove logo
           </button>
+        )}
+      </div>
+
+      {/* Sportity / Live Bulletins URL */}
+      <div className="bg-rl-card border border-white/10 rounded-xl p-4 mb-5">
+        <div className="mb-3">
+          <h2 className="text-white font-medium text-sm">Live Bulletins — Sportity link</h2>
+          <p className="text-white/35 text-xs mt-0.5">If set, the Live Bulletins tile links directly to your Sportity event instead of the internal bulletins page.</p>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={sportityUrl}
+            onChange={e => setSportityUrl(e.target.value)}
+            placeholder="https://sportity.com/e/your-event"
+            className="rl-input flex-1"
+          />
+          <button
+            type="button"
+            onClick={saveSportityUrl}
+            disabled={savingSportityUrl || sportityUrl.trim() === (rally.sportity_url || '')}
+            className="rl-btn-ghost text-xs flex-shrink-0 disabled:opacity-40"
+          >
+            {savingSportityUrl ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+        {rally.sportity_url && (
+          <p className="text-white/25 text-xs mt-2">Active: <span className="text-white/40">{rally.sportity_url}</span></p>
         )}
       </div>
 
