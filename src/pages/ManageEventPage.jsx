@@ -34,6 +34,8 @@ export default function ManageEventPage() {
   const [fiFile, setFiFile] = useState(null)
   const [fiUploading, setFiUploading] = useState(false)
   const [fiExtracting, setFiExtracting] = useState(false)
+  const [roadbookFile, setRoadbookFile] = useState(null)
+  const [roadbookUploading, setRoadbookUploading] = useState(false)
   const [entryMode, setEntryMode] = useState('url') // url | pdf | csv | paste
   const [entryUrl, setEntryUrl] = useState('')
   const [entryText, setEntryText] = useState('')
@@ -497,6 +499,29 @@ export default function ManageEventPage() {
     }
   }
 
+  async function handleRoadbookUpload(e) {
+    e.preventDefault()
+    if (!roadbookFile) { toast.error('Please select a PDF'); return }
+    setRoadbookUploading(true)
+    try {
+      const path = `${rallyId}/roadbook_${Date.now()}.pdf`
+      const { error: uploadErr } = await supabase.storage
+        .from('rally-docs')
+        .upload(path, roadbookFile, { contentType: 'application/pdf', upsert: true })
+      if (uploadErr) throw uploadErr
+
+      const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
+      await supabase.from('rallies').update({ roadbook_pdf_url: publicUrl }).eq('id', rallyId)
+      setRally(r => ({ ...r, roadbook_pdf_url: publicUrl }))
+      setRoadbookFile(null)
+      toast.success('Roadbook uploaded!')
+    } catch (err) {
+      toast.error(err.message || 'Failed to upload roadbook')
+    } finally {
+      setRoadbookUploading(false)
+    }
+  }
+
   if (!rally) return <div className="max-w-4xl mx-auto px-4 py-8"><div className="h-8 w-48 bg-white/5 rounded-lg animate-pulse" /></div>
 
   return (
@@ -779,6 +804,39 @@ export default function ManageEventPage() {
           >
             {(fiUploading || fiExtracting) && <span className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
             {fiUploading ? 'Uploading…' : fiExtracting ? 'Extracting…' : rally.final_instructions_data ? 'Replace' : 'Upload & Extract'}
+          </button>
+        </form>
+      </div>
+
+      {/* Roadbook card */}
+      <div className="bg-rl-card border border-white/10 rounded-xl p-5 mb-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-white font-medium text-sm">Roadbook</h2>
+            <p className="text-white/35 text-xs mt-0.5">Upload the roadbook PDF — it will appear on the event page and in Rally Logistics.</p>
+          </div>
+          {rally.roadbook_pdf_url && (
+            <a href={rally.roadbook_pdf_url} target="_blank" rel="noopener noreferrer"
+              className="text-xs text-rl-accent hover:text-white transition-colors flex-shrink-0">
+              View PDF ↗
+            </a>
+          )}
+        </div>
+
+        <form onSubmit={handleRoadbookUpload} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={e => setRoadbookFile(e.target.files[0])}
+            className="flex-1 text-xs text-white/50 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white/70 cursor-pointer"
+          />
+          <button
+            type="submit"
+            disabled={!roadbookFile || roadbookUploading}
+            className="rl-btn-primary text-xs flex-shrink-0 flex items-center justify-center gap-2 disabled:opacity-50 py-2.5"
+          >
+            {roadbookUploading && <span className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+            {roadbookUploading ? 'Uploading…' : rally.roadbook_pdf_url ? 'Replace' : 'Upload'}
           </button>
         </form>
       </div>
