@@ -106,7 +106,8 @@ export default function EventPage() {
         endpoint,
         p256dh: keys.p256dh,
         auth: keys.auth,
-      }, { onConflict: 'endpoint,rally_id' })
+        app: 'rallygo',
+      }, { onConflict: 'endpoint,rally_id,app' })
 
       setNotifStatus('granted')
     } catch {
