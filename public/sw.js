@@ -1,18 +1,14 @@
-// RallyGo Service Worker — offline-first caching
-const SHELL_CACHE = 'rallygo-shell-v1'
-const RUNTIME_CACHE = 'rallygo-runtime-v1'
+// RallyGo Service Worker — offline-first caching + push notifications
+// v2: navigation is network-first so app updates reach users immediately
+// (v1 served the shell cache-first, which froze users on old builds)
+const SHELL_CACHE = 'rallygo-shell-v2'
+const RUNTIME_CACHE = 'rallygo-runtime-v2'
 
-// Pre-cache the app shell on install
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(SHELL_CACHE).then(cache =>
-      cache.addAll(['/', '/index.html'])
-    )
-  )
   self.skipWaiting()
 })
 
-// Remove old caches on activate
+// Remove old caches on activate (clears the stale v1 shell)
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -35,7 +31,6 @@ self.addEventListener('fetch', event => {
   if (!url.protocol.startsWith('http')) return
 
   // ── Supabase API ── Network-first, cache fallback
-  // This means live data loads when online; last-seen data shows offline
   if (url.hostname.includes('supabase.co')) {
     event.respondWith(
       fetch(request)
@@ -51,13 +46,10 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  // ── App shell + static assets ── Cache-first, network fallback
-  // JS/CSS/fonts are cached permanently once loaded
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached
-
-      return fetch(request)
+  // ── index.html / navigation ── Network-first so code updates land immediately
+  if (request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(request)
         .then(response => {
           if (response.ok) {
             const clone = response.clone()
@@ -65,12 +57,22 @@ self.addEventListener('fetch', event => {
           }
           return response
         })
-        .catch(() => {
-          // Offline + navigation → serve the SPA shell so routing still works
-          if (request.mode === 'navigate') {
-            return caches.match('/index.html')
-          }
-        })
+        .catch(() => caches.match(request).then(r => r || caches.match('/index.html')))
+    )
+    return
+  }
+
+  // ── Hashed static assets (JS/CSS/fonts) ── Cache-first (hash changes each build)
+  event.respondWith(
+    caches.match(request).then(cached => {
+      if (cached) return cached
+      return fetch(request).then(response => {
+        if (response.ok) {
+          const clone = response.clone()
+          caches.open(SHELL_CACHE).then(c => c.put(request, clone))
+        }
+        return response
+      })
     })
   )
 })
