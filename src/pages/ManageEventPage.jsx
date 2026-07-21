@@ -36,7 +36,6 @@ export default function ManageEventPage() {
   const [fiExtracting, setFiExtracting] = useState(false)
   const [roadbookFile, setRoadbookFile] = useState(null)
   const [roadbookUploading, setRoadbookUploading] = useState(false)
-  const [logoUploading, setLogoUploading] = useState(false)
   const [entryMode, setEntryMode] = useState('url') // url | pdf | csv | paste
   const [entryUrl, setEntryUrl] = useState('')
   const [entryText, setEntryText] = useState('')
@@ -523,36 +522,6 @@ export default function ManageEventPage() {
     }
   }
 
-  async function handleLogoUpload(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) { toast.error('Please choose an image file'); return }
-    setLogoUploading(true)
-    try {
-      const ext = file.name.split('.').pop()
-      const path = `${rallyId}/logo_${Date.now()}.${ext}`
-      const { error: uploadErr } = await supabase.storage
-        .from('rally-docs')
-        .upload(path, file, { contentType: file.type, upsert: true })
-      if (uploadErr) throw uploadErr
-      const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
-      await supabase.from('rallies').update({ logo_url: publicUrl }).eq('id', rallyId)
-      setRally(r => ({ ...r, logo_url: publicUrl }))
-      toast.success('Logo uploaded!')
-    } catch (err) {
-      toast.error(err.message || 'Failed to upload logo')
-    } finally {
-      setLogoUploading(false)
-      e.target.value = ''
-    }
-  }
-
-  async function removeLogo() {
-    await supabase.from('rallies').update({ logo_url: null }).eq('id', rallyId)
-    setRally(r => ({ ...r, logo_url: null }))
-    toast.success('Logo removed')
-  }
-
   if (!rally) return <div className="max-w-4xl mx-auto px-4 py-8"><div className="h-8 w-48 bg-white/5 rounded-lg animate-pulse" /></div>
 
   return (
@@ -837,36 +806,6 @@ export default function ManageEventPage() {
             {fiUploading ? 'Uploading…' : fiExtracting ? 'Extracting…' : rally.final_instructions_data ? 'Replace' : 'Upload & Extract'}
           </button>
         </form>
-      </div>
-
-      {/* Rally logo card */}
-      <div className="bg-rl-card border border-white/10 rounded-xl p-5 mb-5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 min-w-0">
-            {rally.logo_url ? (
-              <img src={rally.logo_url} alt="Rally logo" className="w-14 h-14 rounded-xl object-contain bg-white/5 border border-white/10 flex-shrink-0" />
-            ) : (
-              <div className="w-14 h-14 rounded-xl bg-white/5 border border-dashed border-white/15 flex items-center justify-center flex-shrink-0">
-                <svg viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-white/20">
-                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"/>
-                </svg>
-              </div>
-            )}
-            <div className="min-w-0">
-              <h2 className="text-white font-medium text-sm">Rally logo</h2>
-              <p className="text-white/35 text-xs mt-0.5">Shown on the event page and in Rally Logistics. PNG or JPG, square works best.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {rally.logo_url && (
-              <button onClick={removeLogo} className="text-xs text-red-400/60 hover:text-red-400 transition-colors">Remove</button>
-            )}
-            <label className="rl-btn-primary text-xs cursor-pointer py-2.5">
-              {logoUploading ? 'Uploading…' : rally.logo_url ? 'Replace' : 'Upload'}
-              <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" disabled={logoUploading} />
-            </label>
-          </div>
-        </div>
       </div>
 
       {/* Roadbook card */}
