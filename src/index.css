@@ -9,21 +9,22 @@
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
     max-width: 100vw;
-    /* iOS PWA: stop rubber-band bounce dragging the app up the screen.
-       'contain' (not 'none') — 'none' freezes scrolling on Samsung Internet */
-    overscroll-behavior-y: contain;
-  }
-
-  body {
-    /* iOS PWA: respect safe areas so content is never under the notch/status bar/home bar */
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-    padding-bottom: env(safe-area-inset-bottom);
   }
 
   * {
     box-sizing: border-box;
+  }
+
+  /* Only when running as an INSTALLED app: stop rubber-band bounce + respect
+     safe areas. Scoped to standalone so it never affects desktop/browser scroll. */
+  @media (display-mode: standalone) {
+    html, body { overscroll-behavior-y: contain; }
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
   }
 }
 
