@@ -36,6 +36,8 @@ export default function ManageEventPage() {
   const [fiExtracting, setFiExtracting] = useState(false)
   const [roadbookFile, setRoadbookFile] = useState(null)
   const [roadbookUploading, setRoadbookUploading] = useState(false)
+  const [routeOverviewUploading, setRouteOverviewUploading] = useState(false)
+  const [stageImgUploading, setStageImgUploading] = useState(null) // stage number currently uploading
   const [entryMode, setEntryMode] = useState('url') // url | pdf | csv | paste
   const [entryUrl, setEntryUrl] = useState('')
   const [entryText, setEntryText] = useState('')
@@ -522,6 +524,67 @@ export default function ManageEventPage() {
     }
   }
 
+  async function handleRouteOverviewUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Please choose an image'); return }
+    setRouteOverviewUploading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${rallyId}/route_overview_${Date.now()}.${ext}`
+      const { error: uploadErr } = await supabase.storage.from('rally-docs').upload(path, file, { contentType: file.type, upsert: true })
+      if (uploadErr) throw uploadErr
+      const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
+      await supabase.from('rallies').update({ route_overview_url: publicUrl }).eq('id', rallyId)
+      setRally(r => ({ ...r, route_overview_url: publicUrl }))
+      toast.success('Route overview uploaded!')
+    } catch (err) {
+      toast.error(err.message || 'Upload failed')
+    } finally {
+      setRouteOverviewUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  async function removeRouteOverview() {
+    await supabase.from('rallies').update({ route_overview_url: null }).eq('id', rallyId)
+    setRally(r => ({ ...r, route_overview_url: null }))
+  }
+
+  async function handleStageImageUpload(stageNum, e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Please choose an image'); return }
+    setStageImgUploading(stageNum)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${rallyId}/stage_${stageNum}_${Date.now()}.${ext}`
+      const { error: uploadErr } = await supabase.storage.from('rally-docs').upload(path, file, { contentType: file.type, upsert: true })
+      if (uploadErr) throw uploadErr
+      const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
+      const current = rally.stage_images || {}
+      const key = String(stageNum)
+      const next = { ...current, [key]: [...(current[key] || []), publicUrl] }
+      await supabase.from('rallies').update({ stage_images: next }).eq('id', rallyId)
+      setRally(r => ({ ...r, stage_images: next }))
+      toast.success(`Image added to SS${stageNum}`)
+    } catch (err) {
+      toast.error(err.message || 'Upload failed')
+    } finally {
+      setStageImgUploading(null)
+      e.target.value = ''
+    }
+  }
+
+  async function removeStageImage(stageNum, url) {
+    const current = rally.stage_images || {}
+    const key = String(stageNum)
+    const next = { ...current, [key]: (current[key] || []).filter(u => u !== url) }
+    if (next[key].length === 0) delete next[key]
+    await supabase.from('rallies').update({ stage_images: next }).eq('id', rallyId)
+    setRally(r => ({ ...r, stage_images: next }))
+  }
+
   if (!rally) return <div className="max-w-4xl mx-auto px-4 py-8"><div className="h-8 w-48 bg-white/5 rounded-lg animate-pulse" /></div>
 
   return (
@@ -839,6 +902,66 @@ export default function ManageEventPage() {
             {roadbookUploading ? 'Uploading…' : rally.roadbook_pdf_url ? 'Replace' : 'Upload'}
           </button>
         </form>
+      </div>
+
+      {/* Stage maps & route overview card */}
+      <div className="bg-rl-card border border-white/10 rounded-xl p-5 mb-5">
+        <div className="mb-4">
+          <h2 className="text-white font-medium text-sm">Stage maps & route</h2>
+          <p className="text-white/35 text-xs mt-0.5">Upload a route overview and stage map images — they appear in every crew's Rally Logistics Stages tab.</p>
+        </div>
+
+        {/* Route overview */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-white/60 text-xs uppercase tracking-widest font-semibold">Route overview</p>
+            {rally.route_overview_url && (
+              <button onClick={removeRouteOverview} className="text-xs text-red-400/60 hover:text-red-400 transition-colors">Remove</button>
+            )}
+          </div>
+          {rally.route_overview_url && (
+            <img src={rally.route_overview_url} alt="Route overview" className="w-full max-w-md rounded-lg border border-white/10 mb-2" />
+          )}
+          <label className="rl-btn-ghost text-xs cursor-pointer inline-flex py-2.5">
+            {routeOverviewUploading ? 'Uploading…' : rally.route_overview_url ? 'Replace overview' : 'Upload route overview'}
+            <input type="file" accept="image/*" onChange={handleRouteOverviewUpload} className="hidden" disabled={routeOverviewUploading} />
+          </label>
+        </div>
+
+        {/* Per-stage images */}
+        {rally.regulations_data?.stages?.length > 0 ? (
+          <div className="space-y-3">
+            <p className="text-white/60 text-xs uppercase tracking-widest font-semibold">Stage maps</p>
+            {rally.regulations_data.stages.map(stage => {
+              const imgs = rally.stage_images?.[String(stage.number)] || []
+              return (
+                <div key={stage.number} className="bg-white/3 border border-white/8 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-rl-accent font-bold text-sm">SS{stage.number}</span>
+                    <span className="text-white/60 text-xs">{stage.name}</span>
+                  </div>
+                  {imgs.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mb-2">
+                      {imgs.map((url, i) => (
+                        <div key={i} className="relative group">
+                          <img src={url} alt={`SS${stage.number} ${i+1}`} className="w-full aspect-square object-cover rounded border border-white/10" />
+                          <button onClick={() => removeStageImage(stage.number, url)}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <label className="text-xs text-rl-accent hover:text-white cursor-pointer inline-flex items-center gap-1.5">
+                    {stageImgUploading === stage.number ? 'Uploading…' : '+ Add image'}
+                    <input type="file" accept="image/*" onChange={e => handleStageImageUpload(stage.number, e)} className="hidden" disabled={stageImgUploading === stage.number} />
+                  </label>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="text-white/30 text-xs">Upload regulations first so stages are detected, then you can add a map to each stage.</p>
+        )}
       </div>
 
       {/* Entry List card */}
