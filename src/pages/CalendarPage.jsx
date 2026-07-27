@@ -333,7 +333,7 @@ function EventSheet({ event, onClose }) {
     <div className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative bg-[#1a1a1a] border border-white/10 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 w-full sm:max-w-sm mx-auto"
+        className="relative bg-white border border-white/10 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 w-full sm:max-w-sm mx-auto"
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}

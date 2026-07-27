@@ -152,7 +152,7 @@ export default function EventPage() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-0">
       {/* Dark event header */}
-      <div className="bg-[#111] -mx-4 px-4 sm:px-6 pt-6 pb-0 mb-6 sm:rounded-b-2xl border-b border-white/8">
+      <div className="bg-white -mx-4 px-4 sm:px-6 pt-6 pb-0 mb-6 sm:rounded-b-2xl border-b border-white/8">
         {/* Back */}
         <div className="mb-4">
           <BackButton to="/calendar" label="Calendar" />

@@ -228,7 +228,7 @@ function FeaturedCard({ rally }) {
     <Link
       to={`/event/${rally.id}`}
       className="block rounded-2xl overflow-hidden border border-white/10 hover:border-white/25 transition-all no-underline group relative"
-      style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f0f 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)' }}
     >
       <div className="h-0.5 w-full bg-gradient-to-r from-rl-accent via-rl-accent/50 to-transparent" />
       <div className="p-5 sm:p-6">

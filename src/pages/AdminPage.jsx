@@ -640,7 +640,7 @@ function CalendarPickerModal({ onSelect, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-2xl"
+        className="relative bg-white border border-white/10 rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="p-4 border-b border-white/8">

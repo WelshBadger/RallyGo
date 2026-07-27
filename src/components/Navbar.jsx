@@ -51,7 +51,7 @@ export default function Navbar() {
     <>
       <nav className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-[#111]/95 backdrop-blur-md shadow-[0_1px_0_0_rgba(255,255,255,0.06)]'
+          ? 'bg-white/95 backdrop-blur-md shadow-[0_1px_0_0_rgba(255,255,255,0.06)]'
           : 'bg-transparent'
       }`}>
         {/* Animated accent line */}
@@ -123,7 +123,7 @@ export default function Navbar() {
           />
 
           {/* Panel — slides up from bottom */}
-          <div className="absolute bottom-0 left-0 right-0 bg-[#161616] border-t border-white/10 rounded-t-2xl overflow-hidden">
+          <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-white/10 rounded-t-2xl overflow-hidden">
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 rounded-full bg-white/15" />
