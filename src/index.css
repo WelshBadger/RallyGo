@@ -4,8 +4,8 @@
 
 @layer base {
   html, body {
-    background-color: #0f0f0f;
-    color: #ffffff;
+    background-color: #ffffff;
+    color: #0f172a;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
     max-width: 100vw;
@@ -78,3 +78,44 @@
 @media (max-width: 640px) {
   input, select, textarea { font-size: 16px !important; }
 }
+
+/* ============================================================
+   LIGHT THEME — global remap of the old dark-theme colour classes.
+   Unlayered !important rules override Tailwind's layered utilities.
+   Keeps the red accent; keeps photo lightbox overlays dark.
+   ============================================================ */
+
+.text-white            { color: #0f172a !important; }
+.text-white\/85,
+.text-white\/80        { color: #1e293b !important; }
+.text-white\/70        { color: #334155 !important; }
+.text-white\/60,
+.text-white\/55        { color: #475569 !important; }
+.text-white\/50,
+.text-white\/45        { color: #64748b !important; }
+.text-white\/40        { color: #64748b !important; }
+.text-white\/35,
+.text-white\/30,
+.text-white\/25        { color: #94a3b8 !important; }
+.text-white\/20,
+.text-white\/15        { color: #cbd5e1 !important; }
+
+.bg-white\/3, .bg-white\/4        { background-color: #f8fafc !important; }
+.bg-white\/5, .bg-white\/7, .bg-white\/8 { background-color: #f1f5f9 !important; }
+.bg-white\/10, .bg-white\/12, .bg-white\/15 { background-color: #e8edf3 !important; }
+.bg-rl-card                       { background-color: #f8fafc !important; }
+.bg-rl-surface                    { background-color: #f1f5f9 !important; }
+.bg-rl-bg                         { background-color: #ffffff !important; }
+
+.border-white\/8, .border-white\/10, .border-white\/12, .border-white\/15, .border-white\/18 { border-color: #e2e8f0 !important; }
+.border-white\/20, .border-white\/25, .border-white\/30, .border-white\/50 { border-color: #cbd5e1 !important; }
+
+.divide-white\/5 > :not([hidden]) ~ :not([hidden]),
+.divide-white\/8 > :not([hidden]) ~ :not([hidden]) { border-color: #eef2f6 !important; }
+
+.placeholder-white\/25::placeholder,
+.placeholder-white\/30::placeholder { color: #94a3b8 !important; }
+
+.bg-rl-accent.text-white { color: #ffffff !important; }
+
+.bg-black\/90 .text-white, .bg-black\/80 .text-white, .bg-black\/70 .text-white, .bg-black\/60 .text-white { color: #ffffff !important; }
