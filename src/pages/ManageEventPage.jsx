@@ -39,6 +39,8 @@ export default function ManageEventPage() {
   const [routeOverviewUploading, setRouteOverviewUploading] = useState(false)
   const [stageMapLabel, setStageMapLabel] = useState('')
   const [stageMapUploading, setStageMapUploading] = useState(false)
+  const [schedLabel, setSchedLabel] = useState('')
+  const [schedUploading, setSchedUploading] = useState(false)
   const [entryMode, setEntryMode] = useState('url') // url | pdf | csv | paste
   const [entryUrl, setEntryUrl] = useState('')
   const [entryText, setEntryText] = useState('')
@@ -586,6 +588,40 @@ export default function ManageEventPage() {
     setRally(r => ({ ...r, stage_maps: next }))
   }
 
+  // Labelled rally-schedule list: each item is { id, label, url, type: 'image' | 'pdf' }.
+  async function handleSchedUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const isPdf = file.type === 'application/pdf'
+    const isImg = file.type.startsWith('image/')
+    if (!isPdf && !isImg) { toast.error('Please choose an image or a PDF'); return }
+    setSchedUploading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${rallyId}/schedule_${Date.now()}.${ext}`
+      const { error: uploadErr } = await supabase.storage.from('rally-docs').upload(path, file, { contentType: file.type, upsert: true })
+      if (uploadErr) throw uploadErr
+      const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
+      const item = { id: Date.now(), label: schedLabel.trim() || file.name.replace(/\.[^.]+$/, ''), url: publicUrl, type: isPdf ? 'pdf' : 'image' }
+      const next = [...(rally.rally_schedule_files || []), item]
+      await supabase.from('rallies').update({ rally_schedule_files: next }).eq('id', rallyId)
+      setRally(r => ({ ...r, rally_schedule_files: next }))
+      setSchedLabel('')
+      toast.success('Added')
+    } catch (err) {
+      toast.error(err.message || 'Upload failed')
+    } finally {
+      setSchedUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  async function removeSchedFile(id) {
+    const next = (rally.rally_schedule_files || []).filter(m => m.id !== id)
+    await supabase.from('rallies').update({ rally_schedule_files: next }).eq('id', rallyId)
+    setRally(r => ({ ...r, rally_schedule_files: next }))
+  }
+
   if (!rally) return <div className="max-w-4xl mx-auto px-4 py-8"><div className="h-8 w-48 bg-white/5 rounded-lg animate-pulse" /></div>
 
   return (
@@ -949,6 +985,49 @@ export default function ManageEventPage() {
           </label>
         </div>
         <p className="text-white/25 text-[11px] mt-2">Tip: type a label first, then choose the file. Labels default to the file name.</p>
+      </div>
+
+      {/* Rally schedule card — labelled list of images / PDFs */}
+      <div className="bg-rl-card border border-white/10 rounded-xl p-5 mb-5">
+        <div className="mb-4">
+          <h2 className="text-white font-medium text-sm">Rally schedule</h2>
+          <p className="text-white/35 text-xs mt-0.5">Upload the official rally schedule — images or PDFs, each with a label. Add as many as you like. They appear in every crew's Rally Logistics "Rally Schedule" tab.</p>
+        </div>
+
+        {rally.rally_schedule_files?.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {rally.rally_schedule_files.map(m => (
+              <div key={m.id} className="flex items-center gap-3 bg-white/3 border border-white/8 rounded-lg p-2.5">
+                {m.type === 'image' ? (
+                  <img src={m.url} alt={m.label} className="w-12 h-12 rounded object-cover border border-white/10 flex-shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 rounded bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-indigo-400"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"/></svg>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-medium truncate">{m.label}</p>
+                  <p className="text-white/35 text-xs uppercase">{m.type}</p>
+                </div>
+                <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-xs text-rl-accent hover:text-white flex-shrink-0">View</a>
+                <button onClick={() => removeSchedFile(m.id)} className="text-xs text-red-400/60 hover:text-red-400 flex-shrink-0">Remove</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+          <input
+            value={schedLabel}
+            onChange={e => setSchedLabel(e.target.value)}
+            placeholder="Label — e.g. Timetable, Day 1 schedule, Service times"
+            className="rl-input text-sm flex-1"
+          />
+          <label className="rl-btn-primary text-xs cursor-pointer justify-center py-2.5 flex-shrink-0">
+            {schedUploading ? 'Uploading…' : '+ Add image / PDF'}
+            <input type="file" accept="image/*,application/pdf" onChange={handleSchedUpload} className="hidden" disabled={schedUploading} />
+          </label>
+        </div>
       </div>
 
       {/* Entry List card */}
