@@ -385,6 +385,42 @@ export default function EventPage() {
         </section>
       )}
 
+      {/* Rally schedule */}
+      {Array.isArray(rally.rally_schedule_files) && rally.rally_schedule_files.length > 0 && (
+        <section className="mb-6 bg-white rounded-2xl border border-black/10 p-5">
+          <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium mb-3">Rally schedule</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {rally.rally_schedule_files.map((f) => (
+              f.type === 'pdf' ? (
+                <a
+                  key={f.id}
+                  href={f.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 bg-white/5 rounded-xl border border-white/10 p-3 hover:border-rl-accent transition-colors no-underline"
+                >
+                  <svg viewBox="0 0 16 16" fill="currentColor" className="w-5 h-5 text-rl-accent shrink-0">
+                    <path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 011-1h8zM5 12.25v3.25a.25.25 0 00.4.2l1.45-1.087a.25.25 0 01.3 0L8.6 15.7a.25.25 0 00.4-.2v-3.25a.25.25 0 00-.25-.25h-3.5a.25.25 0 00-.25.25z" />
+                  </svg>
+                  <span className="text-white text-sm truncate">{f.label || 'Schedule PDF'}</span>
+                </a>
+              ) : (
+                <a
+                  key={f.id}
+                  href={f.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-rl-accent transition-colors no-underline"
+                >
+                  <img src={f.url} alt={f.label || 'Schedule'} className="w-full h-40 object-cover" />
+                  {f.label && <p className="text-white text-sm px-3 py-2 truncate">{f.label}</p>}
+                </a>
+              )
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Section tiles */}
       <section className="mb-6">
         <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium mb-3">Event sections</p>
