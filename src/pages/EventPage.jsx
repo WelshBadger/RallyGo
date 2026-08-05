@@ -17,6 +17,24 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...raw].map(c => c.charCodeAt(0)))
 }
 
+// Warm the offline cache with this event's files so they open with no signal later.
+function prefetchFiles(urls) {
+  const seen = new Set()
+  urls.filter(Boolean).forEach(u => {
+    if (typeof u !== 'string' || seen.has(u)) return
+    seen.add(u)
+    fetch(u, { mode: 'cors' }).catch(() => {})
+  })
+}
+// Open a stored file offline-safely via a blob URL (served from SW cache when offline).
+function openFile(url) {
+  const w = window.open('', '_blank')
+  fetch(url)
+    .then(r => r.blob())
+    .then(b => { const o = URL.createObjectURL(b); if (w) w.location = o; else window.location.href = o })
+    .catch(() => { if (w) w.location = url })
+}
+
 export default function EventPage() {
   const { rallyId } = useParams()
   const [rally, setRally] = useState(null)
@@ -24,6 +42,29 @@ export default function EventPage() {
   const [newCounts, setNewCounts] = useState({})
   const [notifStatus, setNotifStatus] = useState(null) // null | 'default' | 'granted' | 'denied' | 'subscribing'
   const { isOrganiser, user } = useAuth()
+
+  // Offline: pre-download this event's files while there's signal
+  useEffect(() => {
+    if (!rally) return
+    const urls = []
+    const push = arr => (arr || []).forEach(m => urls.push(typeof m === 'string' ? m : m?.url))
+    push(rally.stage_maps); push(rally.rally_schedule_files)
+    urls.push(rally.route_overview_url, rally.roadbook_pdf_url, rally.regulations_pdf_url, rally.final_instructions_url, rally.logo_url)
+    Object.values(rally.stage_images || {}).forEach(v => push(v))
+    prefetchFiles(urls)
+  }, [rally])
+
+  // Offline: open Supabase storage files from cache via blob URL
+  useEffect(() => {
+    function onClick(e) {
+      const a = e.target.closest && e.target.closest('a[href]')
+      if (!a) return
+      const href = a.getAttribute('href') || ''
+      if (/supabase\.co\/storage\//.test(href)) { e.preventDefault(); openFile(href) }
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [])
 
   useEffect(() => {
     async function load() {

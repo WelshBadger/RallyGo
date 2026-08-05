@@ -1,8 +1,9 @@
 // RallyGo Service Worker — offline-first caching + push notifications
 // v2: navigation is network-first so app updates reach users immediately
 // (v1 served the shell cache-first, which froze users on old builds)
-const SHELL_CACHE = 'rallygo-shell-v2'
-const RUNTIME_CACHE = 'rallygo-runtime-v2'
+const SHELL_CACHE = 'rallygo-shell-v3'
+const RUNTIME_CACHE = 'rallygo-runtime-v3'
+const FILE_CACHE = 'rallygo-files-v3'
 
 self.addEventListener('install', event => {
   self.skipWaiting()
@@ -14,7 +15,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(keys =>
       Promise.all(
         keys
-          .filter(k => k !== SHELL_CACHE && k !== RUNTIME_CACHE)
+          .filter(k => k !== SHELL_CACHE && k !== RUNTIME_CACHE && k !== FILE_CACHE)
           .map(k => caches.delete(k))
       )
     )
@@ -30,8 +31,30 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return
   if (!url.protocol.startsWith('http')) return
 
-  // ── Supabase API ── Network-first, cache fallback
-  if (url.hostname.includes('supabase.co')) {
+  const isSupabase = url.hostname.includes('supabase.co')
+
+  // ── Supabase Storage FILES (images / PDFs) ── Cache-first, offline-friendly.
+  //    Caches opaque (no-cors) responses too so images survive with no signal.
+  if (isSupabase && url.pathname.includes('/storage/')) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached
+        return fetch(request)
+          .then(response => {
+            if (response && (response.ok || response.type === 'opaque')) {
+              const clone = response.clone()
+              caches.open(FILE_CACHE).then(c => c.put(request, clone))
+            }
+            return response
+          })
+          .catch(() => caches.match(request))
+      })
+    )
+    return
+  }
+
+  // ── Supabase REST/API ── Network-first, cache fallback
+  if (isSupabase) {
     event.respondWith(
       fetch(request)
         .then(response => {
