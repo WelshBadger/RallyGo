@@ -6,6 +6,7 @@ import TileGrid from '../components/TileGrid'
 import BulletinFeed from '../components/BulletinFeed'
 import { formatDateRange } from '../lib/dateUtils'
 import BackButton from '../components/BackButton'
+import WeatherPanel from '../components/WeatherPanel'
 
 // Public VAPID key for push subscriptions
 const VAPID_PUBLIC_KEY = 'BIcwQ-AgPS8rQeybSdJEYAohASdl7C3vx9ls5N5BWx0qC_2Av_gx1k-USjFEeZmjeM-KYGua2tKWqIYNWvPWZc8'
@@ -425,6 +426,9 @@ export default function EventPage() {
           )}
         </section>
       )}
+
+      {/* Weather */}
+      <WeatherPanel rally={rally} />
 
       {/* Rally schedule */}
       {Array.isArray(rally.rally_schedule_files) && rally.rally_schedule_files.length > 0 && (
