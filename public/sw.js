@@ -7,6 +7,12 @@ const FILE_CACHE = 'rallygo-files-v3'
 
 self.addEventListener('install', event => {
   self.skipWaiting()
+  event.waitUntil(
+    caches.open(SHELL_CACHE).then(c => Promise.all([
+      c.add('/').catch(() => {}),
+      c.add('/index.html').catch(() => {}),
+    ]))
+  )
 })
 
 // Remove old caches on activate (clears the stale v1 shell)
@@ -69,7 +75,8 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  // ── index.html / navigation ── Network-first so code updates land immediately
+  // ── Navigations ── Network-first for fresh code; offline, fall back to this page
+  //    if cached, else the app shell (SPA routes client-side) so it opens on ANY route.
   if (request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
     event.respondWith(
       fetch(request)
@@ -80,7 +87,12 @@ self.addEventListener('fetch', event => {
           }
           return response
         })
-        .catch(() => caches.match(request).then(r => r || caches.match('/index.html')))
+        .catch(async () => {
+          return (await caches.match(request))
+            || (await caches.match('/index.html'))
+            || (await caches.match('/'))
+            || Response.error()
+        })
     )
     return
   }
