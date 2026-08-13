@@ -51,6 +51,10 @@ export default function ManageEventPage() {
   const [savingUrl, setSavingUrl] = useState(false)
   const [sportityUrl, setSportityUrl] = useState('')
   const [savingSportityUrl, setSavingSportityUrl] = useState(false)
+  const [trackingUrl, setTrackingUrl] = useState('')
+  const [savingTracking, setSavingTracking] = useState(false)
+  const [videoUrl, setVideoUrl] = useState('')
+  const [savingVideo, setSavingVideo] = useState(false)
   const [surface, setSurface] = useState('gravel')
   const [savingSurface, setSavingSurface] = useState(false)
   const [visibility, setVisibility] = useState('public')
@@ -63,6 +67,8 @@ export default function ManageEventPage() {
       setRally(r)
       setWebsiteUrl(r?.website_url || '')
       setSportityUrl(r?.sportity_url || '')
+      setTrackingUrl(r?.tracking_url || '')
+      setVideoUrl(r?.video_feed_url || '')
       setSurface(r?.surface || 'gravel')
       setVisibility(r?.visibility || 'public')
       loadDocs(activeSection)
@@ -262,6 +268,24 @@ export default function ManageEventPage() {
     setRally(r => ({ ...r, sportity_url: val }))
     toast.success(val ? 'Sportity URL saved' : 'Sportity URL cleared')
     setSavingSportityUrl(false)
+  }
+
+  async function saveTrackingUrl() {
+    setSavingTracking(true)
+    const val = trackingUrl.trim() || null
+    await supabase.from('rallies').update({ tracking_url: val }).eq('id', rallyId)
+    setRally(r => ({ ...r, tracking_url: val }))
+    toast.success(val ? 'Live tracking link saved' : 'Live tracking link cleared')
+    setSavingTracking(false)
+  }
+
+  async function saveVideoUrl() {
+    setSavingVideo(true)
+    const val = videoUrl.trim() || null
+    await supabase.from('rallies').update({ video_feed_url: val }).eq('id', rallyId)
+    setRally(r => ({ ...r, video_feed_url: val }))
+    toast.success(val ? 'Live video link saved' : 'Live video link cleared')
+    setSavingVideo(false)
   }
 
   async function saveWebsiteUrl() {
@@ -767,6 +791,42 @@ export default function ManageEventPage() {
         {rally.sportity_url && (
           <p className="text-white/25 text-xs mt-2">Active: <span className="text-white/40">{rally.sportity_url}</span></p>
         )}
+      </div>
+
+      {/* Live Tracking URL */}
+      <div className="bg-rl-card border border-white/10 rounded-xl p-4 mb-5">
+        <div className="mb-3">
+          <h2 className="text-white font-medium text-sm">Live Tracking link</h2>
+          <p className="text-white/35 text-xs mt-0.5">The car-tracker for this rally. If set, a "Live Tracking" tile appears in the crew app. Leave blank to hide the tile.</p>
+        </div>
+        <div className="flex gap-2">
+          <input type="url" value={trackingUrl} onChange={e => setTrackingUrl(e.target.value)}
+            placeholder="https://tracker.example.com/your-event" className="rl-input flex-1" />
+          <button type="button" onClick={saveTrackingUrl}
+            disabled={savingTracking || trackingUrl.trim() === (rally.tracking_url || '')}
+            className="rl-btn-ghost text-xs flex-shrink-0 disabled:opacity-40">
+            {savingTracking ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+        {rally.tracking_url && <p className="text-white/25 text-xs mt-2">Active: <span className="text-white/40">{rally.tracking_url}</span></p>}
+      </div>
+
+      {/* Live Video Feed URL */}
+      <div className="bg-rl-card border border-white/10 rounded-xl p-4 mb-5">
+        <div className="mb-3">
+          <h2 className="text-white font-medium text-sm">Live Video feed link</h2>
+          <p className="text-white/35 text-xs mt-0.5">The stage-rally live video stream. If set, a "Live Videos" tile appears in the crew app. Leave blank to hide the tile.</p>
+        </div>
+        <div className="flex gap-2">
+          <input type="url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)}
+            placeholder="https://youtube.com/live/... or stream link" className="rl-input flex-1" />
+          <button type="button" onClick={saveVideoUrl}
+            disabled={savingVideo || videoUrl.trim() === (rally.video_feed_url || '')}
+            className="rl-btn-ghost text-xs flex-shrink-0 disabled:opacity-40">
+            {savingVideo ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+        {rally.video_feed_url && <p className="text-white/25 text-xs mt-2">Active: <span className="text-white/40">{rally.video_feed_url}</span></p>}
       </div>
 
       {/* Regulations card */}
