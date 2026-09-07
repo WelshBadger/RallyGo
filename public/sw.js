@@ -37,6 +37,9 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return
   if (!url.protocol.startsWith('http')) return
 
+  // Vercel Web Analytics — never intercept or cache; must always hit the network
+  if (url.pathname.startsWith('/_vercel/')) return
+
   const isSupabase = url.hostname.includes('supabase.co')
 
   // ── Supabase Storage FILES (images / PDFs) ── Cache-first, offline-friendly.
