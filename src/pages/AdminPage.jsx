@@ -17,6 +17,7 @@ const TABS = [
   { id: 'championships',  label: 'Championships' },
   { id: 'calendar',       label: 'Calendar Events' },
   { id: 'rallies',        label: 'Rallies' },
+  { id: 'analytics',      label: 'Analytics' },
 ]
 
 const SURFACE_OPTIONS = [
@@ -60,6 +61,7 @@ export default function AdminPage() {
       {tab === 'championships' && <ChampionshipsTab />}
       {tab === 'calendar'      && <CalendarTab />}
       {tab === 'rallies'       && <RalliesTab />}
+      {tab === 'analytics'     && <AnalyticsTab />}
     </main>
   )
 }
@@ -844,6 +846,200 @@ function Field({ label, hint, children }) {
         {hint && <span className="text-white/20 normal-case tracking-normal font-normal ml-1">({hint})</span>}
       </label>
       {children}
+    </div>
+  )
+}
+
+
+// ─── Analytics tab ───────────────────────────────────────────────────────────
+// Reads Vercel Web Analytics through the `vercel-analytics` edge function.
+// The Vercel token is account-wide, so it stays server-side — never a VITE_ var.
+
+const ANALYTICS_APPS = [
+  { id: 'rallygo',   label: 'RallyGo' },
+  { id: 'logistics', label: 'Rally Logistics' },
+]
+
+const ANALYTICS_RANGES = [
+  { id: 3,  label: 'Last 3 days' },
+  { id: 7,  label: 'Last 7 days' },
+  { id: 30, label: 'Last 30 days' },
+]
+
+const ANALYTICS_GROUPS = [
+  { id: 'requestPath', label: 'Page' },
+  { id: 'country',     label: 'Country' },
+  { id: 'referrer',    label: 'Referrer' },
+  { id: 'device',      label: 'Device' },
+]
+
+function daysAgoISO(n) {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString()
+}
+
+// The Web Analytics API is new and the response shape isn't guaranteed stable,
+// so read defensively rather than assuming a key.
+function pickNumber(payload, keys) {
+  if (!payload) return null
+  const sources = [payload, payload.data, payload.total, payload.totals].filter(Boolean)
+  for (const src of sources) {
+    for (const k of keys) {
+      if (typeof src[k] === 'number') return src[k]
+    }
+  }
+  return null
+}
+
+function pickRows(payload) {
+  if (!payload) return []
+  if (Array.isArray(payload)) return payload
+  for (const k of ['data', 'rows', 'results', 'items']) {
+    if (Array.isArray(payload[k])) return payload[k]
+  }
+  return []
+}
+
+function rowLabel(row) {
+  for (const k of ['requestPath', 'path', 'country', 'referrer', 'device', 'key', 'name', 'value']) {
+    if (typeof row?.[k] === 'string') return row[k]
+  }
+  return '—'
+}
+
+function rowCount(row) {
+  return pickNumber(row, ['visitors', 'uniqueVisitors', 'views', 'pageviews', 'count', 'total']) ?? 0
+}
+
+function AnalyticsTab() {
+  const [app, setApp]         = useState('rallygo')
+  const [days, setDays]       = useState(3)
+  const [group, setGroup]     = useState('requestPath')
+  const [data, setData]       = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState(null)
+
+  async function load() {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data: res, error: fnError } = await supabase.functions.invoke('vercel-analytics', {
+        body: { app, since: daysAgoISO(days), until: new Date().toISOString(), by: group },
+      })
+      if (fnError) throw fnError
+      if (res?.error) throw new Error(res.error)
+      setData(res)
+    } catch (err) {
+      setError(err.message || 'Could not load analytics')
+      setData(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [app, days, group])
+
+  const visitors  = pickNumber(data?.totals, ['visitors', 'uniqueVisitors', 'devices'])
+  const pageviews = pickNumber(data?.totals, ['pageviews', 'views', 'total', 'count'])
+  const rows      = pickRows(data?.breakdown)
+
+  return (
+    <div>
+      {/* Controls */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <select
+          value={app}
+          onChange={e => setApp(e.target.value)}
+          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+        >
+          {ANALYTICS_APPS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+        </select>
+
+        <select
+          value={days}
+          onChange={e => setDays(Number(e.target.value))}
+          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+        >
+          {ANALYTICS_RANGES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+        </select>
+
+        <select
+          value={group}
+          onChange={e => setGroup(e.target.value)}
+          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+        >
+          {ANALYTICS_GROUPS.map(g => <option key={g.id} value={g.id}>By {g.label}</option>)}
+        </select>
+
+        <button
+          onClick={load}
+          disabled={loading}
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-white text-black disabled:opacity-40"
+        >
+          {loading ? 'Loading…' : 'Refresh'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
+          <p className="text-red-300 text-sm font-medium mb-1">Couldn't load analytics</p>
+          <p className="text-red-300/70 text-xs break-words">{error}</p>
+        </div>
+      )}
+
+      {/* Totals */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="bg-white/4 rounded-xl p-5">
+          <p className="text-white/35 text-xs uppercase tracking-wide mb-2">Visitors</p>
+          <p className="text-3xl font-semibold text-white">
+            {loading ? '—' : (visitors ?? '—')}
+          </p>
+        </div>
+        <div className="bg-white/4 rounded-xl p-5">
+          <p className="text-white/35 text-xs uppercase tracking-wide mb-2">Page views</p>
+          <p className="text-3xl font-semibold text-white">
+            {loading ? '—' : (pageviews ?? '—')}
+          </p>
+        </div>
+      </div>
+
+      {/* Breakdown */}
+      <div className="bg-white/4 rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-white/5">
+          <p className="text-white/50 text-sm font-medium">
+            By {ANALYTICS_GROUPS.find(g => g.id === group)?.label}
+          </p>
+        </div>
+        {rows.length === 0 ? (
+          <p className="text-white/30 text-sm px-5 py-6">
+            {loading ? 'Loading…' : 'No data for this range yet.'}
+          </p>
+        ) : (
+          <ul>
+            {rows.map((row, i) => (
+              <li key={i} className="flex items-center justify-between px-5 py-3 border-b border-white/5 last:border-0">
+                <span className="text-white/70 text-sm truncate mr-4">{rowLabel(row)}</span>
+                <span className="text-white text-sm font-medium tabular-nums">{rowCount(row)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {data?.errors?.length > 0 && (
+        <div className="mt-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+          <p className="text-amber-300 text-xs font-medium mb-1">Partial result</p>
+          {data.errors.map((e, i) => (
+            <p key={i} className="text-amber-300/70 text-xs break-words">{e}</p>
+          ))}
+        </div>
+      )}
+
+      <p className="text-white/25 text-xs mt-4 leading-relaxed">
+        Offline use isn't recorded, so at an event with poor signal treat these as a floor rather than a true count.
+      </p>
     </div>
   )
 }
