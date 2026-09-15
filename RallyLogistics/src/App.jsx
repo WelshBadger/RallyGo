@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage'
 import RallySelectPage from './pages/RallySelectPage'
 import PackPage from './pages/PackPage'
 import SharedPackPage from './pages/SharedPackPage'
+import GuestJoinPage from './pages/GuestJoinPage'
 import AccountPage from './pages/AccountPage'
 import NotFoundPage from './pages/NotFoundPage'
 
@@ -22,7 +23,11 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/shared/:shareCode" element={<SharedPackPage />} />
+        <Route path="/join/:shareCode" element={<GuestJoinPage />} />
         <Route path="/" element={<PrivateRoute><RallySelectPage /></PrivateRoute>} />
+        <Route path="/pack/team/:teamPackId" element={<PrivateRoute><PackPage /></PrivateRoute>} />
+        <Route path="/pack/custom/:packId" element={<PrivateRoute><PackPage /></PrivateRoute>} />
+        <Route path="/pack/cal/:calId" element={<PrivateRoute><PackPage /></PrivateRoute>} />
         <Route path="/pack/:rallyId" element={<PrivateRoute><PackPage /></PrivateRoute>} />
         <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
         <Route path="*" element={<NotFoundPage />} />

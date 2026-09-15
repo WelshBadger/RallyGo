@@ -5,8 +5,10 @@ import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const [mode, setMode] = useState('signin')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [marketing, setMarketing] = useState(false)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -14,8 +16,20 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({ email, password })
+      const { data, error } = await supabase.auth.signUp({
+        email, password, options: { data: { full_name: name.trim() } },
+      })
       if (error) { toast.error(error.message); setLoading(false); return }
+      const uid = data.user?.id
+      if (uid) {
+        await supabase.from('profiles').upsert({
+          id: uid,
+          full_name: name.trim() || null,
+          email,
+          marketing_consent: marketing,
+          marketing_consent_at: marketing ? new Date().toISOString() : null,
+        })
+      }
       toast.success('Account created — welcome!')
       navigate('/')
     } else {
@@ -47,6 +61,14 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 bg-rl-card border border-white/10 rounded-2xl p-6">
+          {mode === 'signup' && (
+            <div>
+              <label className="text-white/50 text-xs uppercase tracking-wide mb-1.5 block">Full name</label>
+              <input type="text" name="name" autoComplete="name" value={name} onChange={e => setName(e.target.value)}
+                className="rl-input" placeholder="Your name" required />
+              <p className="text-white/30 text-[11px] mt-1">So teammates can find and invite you.</p>
+            </div>
+          )}
           <div>
             <label className="text-white/50 text-xs uppercase tracking-wide mb-1.5 block">Email</label>
             <input type="email" name="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)}
@@ -57,6 +79,15 @@ export default function LoginPage() {
             <input type="password" name="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={e => setPassword(e.target.value)}
               className="rl-input" placeholder="••••••••" required minLength={6} />
           </div>
+          {mode === 'signup' && (
+            <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
+              <input type="checkbox" checked={marketing} onChange={e => setMarketing(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-white/20 accent-rl-accent flex-shrink-0" />
+              <span className="text-white/50 text-xs leading-snug">
+                I'm happy to be contacted with occasional updates, news and offers from Rally Logistics. You can opt out any time.
+              </span>
+            </label>
+          )}
           <button type="submit" disabled={loading} className="rl-btn-primary w-full justify-center disabled:opacity-50">
             {loading ? '…' : mode === 'signup' ? 'Create account' : 'Sign in'}
           </button>
