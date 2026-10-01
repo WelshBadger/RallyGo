@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import AccessCodeCard from '../components/AccessCodeCard'
@@ -22,7 +22,7 @@ const SECTIONS = [
 
 export default function ManageEventPage() {
   const { rallyId } = useParams()
-  const { user } = useAuth()
+  const { user, isSuperAdmin } = useAuth()
   const [rally, setRally] = useState(null)
   const [docs, setDocs] = useState([])
   const [activeSection, setActiveSection] = useState('bulletins')
@@ -65,6 +65,8 @@ export default function ManageEventPage() {
   useEffect(() => {
     async function load() {
       const { data: r } = await supabase.from('rallies').select('*').eq('id', rallyId).single()
+      // Organisers can only manage rallies they added
+      if (!r || (r.organiser_id !== user.id && !isSuperAdmin)) { setRally(false); return }
       setRally(r)
       setWebsiteUrl(r?.website_url || '')
       setSportityUrl(r?.sportity_url || '')
@@ -647,6 +649,7 @@ export default function ManageEventPage() {
     setRally(r => ({ ...r, rally_schedule_files: next }))
   }
 
+  if (rally === false) return <Navigate to="/organiser" replace />
   if (!rally) return <div className="max-w-4xl mx-auto px-4 py-8"><div className="h-8 w-48 bg-white/5 rounded-lg animate-pulse" /></div>
 
   return (

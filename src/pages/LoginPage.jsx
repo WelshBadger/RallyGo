@@ -36,10 +36,14 @@ export default function LoginPage() {
           <span className="text-white font-medium">RallyHQ</span>
         </Link>
 
+        {/* Sign in / Register */}
+        <div className="grid grid-cols-2 gap-1 p-1 bg-white/5 rounded-xl mb-6">
+          <Link to="/login" state={location.state} className={`py-2 rounded-lg text-sm font-medium text-center no-underline transition-all ${true ? 'bg-rl-accent text-white' : 'text-white/50 hover:text-white'}`}>Sign in</Link>
+          <Link to="/register" state={location.state} className={`py-2 rounded-lg text-sm font-medium text-center no-underline transition-all ${false ? 'bg-rl-accent text-white' : 'text-white/50 hover:text-white'}`}>Register</Link>
+        </div>
+
         <h1 className="text-2xl font-medium text-white mb-1">Organiser sign in</h1>
-        <p className="text-white/40 text-sm mb-7">
-          New here? <Link to="/register" className="text-white/70 hover:text-white transition-colors no-underline">Create an organiser account</Link>
-        </p>
+        <p className="text-white/40 text-sm mb-7">Sign in to add and manage your rallies.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
