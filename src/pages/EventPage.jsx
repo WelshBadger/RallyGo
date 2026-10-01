@@ -7,6 +7,7 @@ import BulletinFeed from '../components/BulletinFeed'
 import { formatDateRange } from '../lib/dateUtils'
 import BackButton from '../components/BackButton'
 import WeatherPanel from '../components/WeatherPanel'
+import { LOGISTICS_URL } from '../lib/config'
 
 // Public VAPID key for push subscriptions
 const VAPID_PUBLIC_KEY = 'BIcwQ-AgPS8rQeybSdJEYAohASdl7C3vx9ls5N5BWx0qC_2Av_gx1k-USjFEeZmjeM-KYGua2tKWqIYNWvPWZc8'
@@ -42,7 +43,7 @@ export default function EventPage() {
   const [loading, setLoading] = useState(true)
   const [newCounts, setNewCounts] = useState({})
   const [notifStatus, setNotifStatus] = useState(null) // null | 'default' | 'granted' | 'denied' | 'subscribing'
-  const { isOrganiser, user } = useAuth()
+  const { isSuperAdmin, user } = useAuth()
 
   // Offline: pre-download this event's files while there's signal
   useEffect(() => {
@@ -50,7 +51,7 @@ export default function EventPage() {
     const urls = []
     const push = arr => (arr || []).forEach(m => urls.push(typeof m === 'string' ? m : m?.url))
     push(rally.stage_maps); push(rally.rally_schedule_files)
-    urls.push(rally.route_overview_url, rally.roadbook_pdf_url, rally.regulations_pdf_url, rally.final_instructions_url, rally.logo_url)
+    urls.push(rally.route_overview_url, rally.roadbook_pdf_url, rally.regulations_pdf_url, rally.final_instructions_pdf_url, rally.logo_url)
     Object.values(rally.stage_images || {}).forEach(v => push(v))
     prefetchFiles(urls)
   }, [rally])
@@ -234,7 +235,7 @@ export default function EventPage() {
         </div>
 
         {/* Organiser controls */}
-        {isOrganiser && (
+        {user && (isSuperAdmin || rally.organiser_id === user.id) && (
           <div className="pb-4 border-b border-white/8 mb-1">
             <Link to={`/organiser/event/${rallyId}`} className="rl-btn-primary text-xs inline-block">
               Manage event →
@@ -260,7 +261,7 @@ export default function EventPage() {
             <span className="text-white/30 text-[10px]">Fuel, recce, schedule & team chat</span>
           </div>
           <a
-            href={`https://rallylogistics.rallygo.co.uk/pack/${rallyId}`}
+            href={`${LOGISTICS_URL}/pack/${rallyId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="rl-btn-ghost text-xs gap-1.5 flex-shrink-0"
@@ -342,20 +343,6 @@ export default function EventPage() {
         </div>
       )}
 
-      {/* Login prompt for non-logged-in users */}
-      {!user && (
-        <div className="mb-6 bg-rl-card border border-rl-accent/30 rounded-xl p-4 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-white font-medium text-sm mb-0.5">Sign in to access event documents</p>
-            <p className="text-white/45 text-xs">View route files, bulletins, results and more.</p>
-          </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <Link to="/login" className="rl-btn-ghost text-xs px-4 py-2">Sign in</Link>
-            <Link to="/register" className="rl-btn-primary text-xs px-4 py-2">Register</Link>
-          </div>
-        </div>
-      )}
-
       {/* Regulations at a glance */}
       {rally.regulations_data && (
         <section className="mb-6">
@@ -363,7 +350,7 @@ export default function EventPage() {
           <div className="bg-rl-card border border-white/10 rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-5">
             {rally.regulations_data.rallyHQ && (
               <div>
-                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Rally HQ</p>
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Event HQ</p>
                 <p className="text-white text-sm">{rally.regulations_data.rallyHQ}</p>
               </div>
             )}

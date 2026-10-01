@@ -131,7 +131,7 @@ function SectionLabel({ label }) {
 }
 
 export default function RallySelectPage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [customPacks, setCustomPacks] = useState([])
@@ -144,11 +144,22 @@ export default function RallySelectPage() {
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
   useEffect(() => {
-    if (!user) return
+    if (authLoading) return
+    const calendar = supabase.from('calendar_events')
+      .select('id, name, date, end_date, location, series, surface, status, rally_id')
+      .order('date', { ascending: true })
+    // Signed out: the calendar is public, packs need an account
+    if (!user) {
+      calendar.then(ev => {
+        setEvents((!ev.error && ev.data) ? ev.data : [])
+        setCustomPacks([])
+        setSharedPacks([])
+        setLoading(false)
+      })
+      return
+    }
     Promise.all([
-      supabase.from('calendar_events')
-        .select('id, name, date, end_date, location, series, surface, status, rally_id')
-        .order('date', { ascending: true }),
+      calendar,
       supabase.from('logistics_packs')
         .select('id, custom_name, custom_date, custom_end_date, custom_location')
         .eq('user_id', user.id)
@@ -173,7 +184,7 @@ export default function RallySelectPage() {
       }
       setLoading(false)
     })
-  }, [user])
+  }, [user, authLoading])
 
   async function addRally(e) {
     e.preventDefault()
@@ -223,14 +234,22 @@ export default function RallySelectPage() {
     <main className="max-w-lg mx-auto px-4 py-6">
       <div className="flex items-start justify-between gap-3 mb-1">
         <h1 className="text-white font-semibold text-lg">Choose your rally</h1>
-        <button onClick={() => setAdding(a => !a)} className="rl-btn-primary text-xs flex-shrink-0">
-          {adding ? 'Close' : '+ Add rally'}
-        </button>
+        {user ? (
+          <button onClick={() => setAdding(a => !a)} className="rl-btn-primary text-xs flex-shrink-0">
+            {adding ? 'Close' : '+ Add rally'}
+          </button>
+        ) : (
+          <Link to="/login" className="rl-btn-primary text-xs flex-shrink-0 no-underline">Sign in</Link>
+        )}
       </div>
-      <p className="text-white/40 text-xs mb-4">Search the RallyGo calendar, or add your own rally if it isn't listed.</p>
+      <p className="text-white/40 text-xs mb-4">
+        {user
+          ? "Search the RallyHQ calendar, or add your own rally if it isn't listed."
+          : 'Browse the RallyHQ calendar. Sign in or create an account to open a rally and build your logistics pack.'}
+      </p>
 
       {/* Add-your-own-rally form */}
-      {adding && (
+      {user && adding && (
         <form onSubmit={addRally} className="bg-rl-card border border-white/10 rounded-xl p-4 mb-5 space-y-3">
           <div>
             <label className="text-white/35 text-[10px] uppercase tracking-wide mb-1 block">Rally name *</label>
@@ -300,7 +319,7 @@ export default function RallySelectPage() {
 
       {upcoming.length > 0 && (
         <>
-          <SectionLabel label={customPacks.length > 0 && !search ? 'RallyGo calendar' : 'Upcoming'} />
+          <SectionLabel label={customPacks.length > 0 && !search ? 'RallyHQ calendar' : 'Upcoming'} />
           <div className="space-y-2">
             {upcoming.map(e => <EventCard key={e.id} e={e} highlight={e.id === next?.id} />)}
           </div>

@@ -28,8 +28,8 @@ Deno.serve(async (req) => {
             currency: 'gbp',
             unit_amount: priceInPence,
             product_data: {
-              name: `Rally League — ${rallyName}`,
-              description: 'Event activation fee. Includes all Rally League features for this event.',
+              name: `RallyHQ — ${rallyName}`,
+              description: 'Event activation fee. Includes all RallyHQ features for this event.',
             },
           },
           quantity: 1,

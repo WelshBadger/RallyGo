@@ -11,7 +11,7 @@ export default function LoginPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const returnTo = location.state?.returnTo || '/'
+  const returnTo = location.state?.returnTo || '/organiser'
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -33,12 +33,12 @@ export default function LoginPage() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 mb-8 no-underline">
           <span className="w-2 h-2 rounded-full bg-rl-accent" />
-          <span className="text-white font-medium">RallyGo</span>
+          <span className="text-white font-medium">RallyHQ</span>
         </Link>
 
-        <h1 className="text-2xl font-medium text-white mb-1">Sign in</h1>
+        <h1 className="text-2xl font-medium text-white mb-1">Organiser sign in</h1>
         <p className="text-white/40 text-sm mb-7">
-          New here? <Link to="/register" className="text-white/70 hover:text-white transition-colors no-underline">Create a free account</Link>
+          New here? <Link to="/register" className="text-white/70 hover:text-white transition-colors no-underline">Create an organiser account</Link>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

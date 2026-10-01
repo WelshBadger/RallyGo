@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', role: 'competitor', carNumber: '' })
+  const [form, setForm] = useState({ fullName: '', email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const { signUp } = useAuth()
   const navigate = useNavigate()
@@ -21,9 +21,9 @@ export default function RegisterPage() {
     }
     setLoading(true)
     try {
-      await signUp(form.email, form.password, form.fullName, form.role, form.carNumber)
-      toast.success('Account created! Check your email to confirm.')
-      navigate('/', { replace: true })
+      await signUp(form.email, form.password, form.fullName, 'organiser')
+      toast.success('Account created!')
+      navigate('/organiser', { replace: true })
     } catch (err) {
       toast.error(err.message || 'Registration failed')
     } finally {
@@ -37,39 +37,15 @@ export default function RegisterPage() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 mb-8 no-underline">
           <span className="w-2 h-2 rounded-full bg-rl-accent" />
-          <span className="text-white font-medium">RallyGo</span>
+          <span className="text-white font-medium">RallyHQ</span>
         </Link>
 
-        <h1 className="text-2xl font-medium text-white mb-1">Create account</h1>
+        <h1 className="text-2xl font-medium text-white mb-1">Create organiser account</h1>
         <p className="text-white/40 text-sm mb-7">
           Already registered? <Link to="/login" className="text-white/70 hover:text-white transition-colors no-underline">Sign in</Link>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Role selector */}
-          <div>
-            <label className="rl-label">I am a</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: 'competitor', label: 'Competitor' },
-                { value: 'organiser', label: 'Organiser' },
-              ].map((r) => (
-                <button
-                  key={r.value}
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, role: r.value }))}
-                  className={`py-2.5 rounded-lg text-sm font-medium border transition-all ${
-                    form.role === r.value
-                      ? 'bg-rl-accent border-rl-accent text-white'
-                      : 'bg-white/5 border-white/10 text-white/50 hover:text-white hover:border-white/25'
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div>
             <label className="rl-label">Full name</label>
             <input
@@ -108,24 +84,9 @@ export default function RegisterPage() {
             />
           </div>
 
-          {form.role === 'competitor' && (
-            <div>
-              <label className="rl-label">Car / competitor number <span className="text-white/25 normal-case">(optional)</span></label>
-              <input
-                type="text"
-                value={form.carNumber}
-                onChange={update('carNumber')}
-                placeholder="e.g. 14"
-                className="rl-input"
-              />
-            </div>
-          )}
-
-          {form.role === 'organiser' && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white/50">
-              As an organiser, you'll be able to create events and upload documents. A per-event fee applies when publishing.
-            </div>
-          )}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white/50">
+            As an organiser, you'll be able to create events and upload documents. A per-event fee applies when publishing.
+          </div>
 
           <button
             type="submit"

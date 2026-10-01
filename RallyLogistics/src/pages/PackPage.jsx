@@ -243,7 +243,7 @@ function toStr(val) {
 
 export default function PackPage() {
   const { rallyId, calId, packId, teamPackId } = useParams()
-  const isCal = !!calId          // calendar-only event (no full RallyGo rally yet)
+  const isCal = !!calId          // calendar-only event (no full RallyHQ rally yet)
   const isCustom = !!packId       // crew-added rally, not on the calendar; private to this pack
   const isMember = !!teamPackId   // opening a pack shared with me by another crew (by pack id)
   const { user } = useAuth()
@@ -694,12 +694,12 @@ export default function PackPage() {
       {/* Calendar-only note */}
       {!tab && isCal && (
         <div className="mb-4 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-          <p className="text-white/60 text-xs">This event is on the RallyGo calendar but the organiser hasn't published full details yet. You can start planning your own pack now — entry list, documents, stages and team chat will appear automatically once it's published.</p>
+          <p className="text-white/60 text-xs">This event is on the RallyHQ calendar but the organiser hasn't published full details yet. You can start planning your own pack now — entry list, documents, stages and team chat will appear automatically once it's published.</p>
         </div>
       )}
       {!tab && isCustom && (
         <div className="mb-4 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-          <p className="text-white/60 text-xs">Your own rally — private to you. Plan fuel, team, locations and schedule here. (Entry list, documents and team chat are only available for events published on RallyGo.)</p>
+          <p className="text-white/60 text-xs">Your own rally — private to you. Plan fuel, team, locations and schedule here. (Entry list, documents and team chat are only available for events published on RallyHQ.)</p>
         </div>
       )}
 
@@ -2508,7 +2508,7 @@ function PreEventTab({ fi, rally }) {
   if (!hasAnyData) {
     return (
       <div className="text-center py-16 bg-rl-card border border-white/8 rounded-xl">
-        <p className="text-white/30 text-sm">Pre-event information will appear here once the organiser uploads the Final Instructions on RallyGo.</p>
+        <p className="text-white/30 text-sm">Pre-event information will appear here once the organiser uploads the Final Instructions on RallyHQ.</p>
       </div>
     )
   }
@@ -3667,7 +3667,7 @@ function EntryListTab({ entries, carNumber }) {
   if (entries.length === 0) {
     return (
       <div className="text-center py-16 bg-rl-card border border-white/8 rounded-xl">
-        <p className="text-white/30 text-sm">Entry list will appear here once the organiser uploads it on RallyGo.</p>
+        <p className="text-white/30 text-sm">Entry list will appear here once the organiser uploads it on RallyHQ.</p>
       </div>
     )
   }
@@ -3989,7 +3989,7 @@ function DocumentsTab({ rally, docs }) {
   if (!hasAnything) {
     return (
       <div className="text-center py-16 bg-rl-card border border-white/8 rounded-xl">
-        <p className="text-white/30 text-sm">Documents will appear here once the organiser uploads them on RallyGo.</p>
+        <p className="text-white/30 text-sm">Documents will appear here once the organiser uploads them on RallyHQ.</p>
       </div>
     )
   }

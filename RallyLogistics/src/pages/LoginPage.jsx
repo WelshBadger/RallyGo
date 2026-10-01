@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [marketing, setMarketing] = useState(false)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const returnTo = useLocation().state?.returnTo || '/'
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -31,11 +32,11 @@ export default function LoginPage() {
         })
       }
       toast.success('Account created — welcome!')
-      navigate('/')
+      navigate(returnTo)
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) { toast.error(error.message); setLoading(false); return }
-      navigate('/')
+      navigate(returnTo)
     }
   }
 
@@ -50,7 +51,7 @@ export default function LoginPage() {
           <h1 className="text-xl font-semibold text-white mb-1">
             {mode === 'signup' ? 'Create your account' : 'Sign in'}
           </h1>
-          <p className="text-white/40 text-sm">Rally Logistics — Team management</p>
+          <p className="text-white/40 text-sm">Rally Logistics — by RallyHQ</p>
         </div>
 
         {mode === 'signup' && (

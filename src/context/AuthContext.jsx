@@ -51,6 +51,8 @@ export function AuthProvider({ children }) {
         role,
         car_number: carNumber || null,
       })
+      // The auth listener may have looked for the profile before it existed
+      await fetchProfile(data.user.id)
     }
     return data
   }

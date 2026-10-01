@@ -24,7 +24,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/shared/:shareCode" element={<SharedPackPage />} />
         <Route path="/join/:shareCode" element={<GuestJoinPage />} />
-        <Route path="/" element={<PrivateRoute><RallySelectPage /></PrivateRoute>} />
+        <Route path="/" element={<RallySelectPage />} />
         <Route path="/pack/team/:teamPackId" element={<PrivateRoute><PackPage /></PrivateRoute>} />
         <Route path="/pack/custom/:packId" element={<PrivateRoute><PackPage /></PrivateRoute>} />
         <Route path="/pack/cal/:calId" element={<PrivateRoute><PackPage /></PrivateRoute>} />

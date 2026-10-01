@@ -39,7 +39,7 @@ export default function AdminPage() {
     <main className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-white mb-1">Admin</h1>
-        <p className="text-white/35 text-sm">Manage all content on RallyGo</p>
+        <p className="text-white/35 text-sm">Manage all content on RallyHQ</p>
       </div>
 
       {/* Tab bar */}
@@ -546,13 +546,18 @@ function CalendarEventEditor({ event, onSave, onCancel }) {
 function RalliesTab() {
   const { user } = useAuth()
   const [rallies, setRallies] = useState([])
+  const [codes, setCodes] = useState({})
   const [loading, setLoading] = useState(true)
   const [showPicker, setShowPicker] = useState(false)
   const [prefill, setPrefill] = useState(null)
 
   async function load() {
-    const { data } = await supabase.from('rallies').select('*').order('date', { ascending: false })
+    const [{ data }, { data: codeRows }] = await Promise.all([
+      supabase.from('rallies').select('*').order('date', { ascending: false }),
+      supabase.from('rally_access_codes').select('rally_id, code'),
+    ])
     setRallies(data || [])
+    setCodes(Object.fromEntries((codeRows || []).map(c => [c.rally_id, c.code])))
     setLoading(false)
   }
   useEffect(() => { load() }, [])
@@ -602,7 +607,7 @@ function RalliesTab() {
             badge={<StatusBadge status={r.status} labels={{ draft: 'Draft', active: 'Active', archived: 'Archived' }} />}
             meta={fmt(r.date)}
             title={r.name}
-            sub={r.location}
+            sub={codes[r.id] ? `${r.location} · Code ${codes[r.id]}` : r.location}
             actions={[
               { label: 'View', href: `/event/${r.id}` },
               { label: 'Manage', href: `/organiser/event/${r.id}`, primary: true },
@@ -856,7 +861,7 @@ function Field({ label, hint, children }) {
 // The Vercel token is account-wide, so it stays server-side — never a VITE_ var.
 
 const ANALYTICS_APPS = [
-  { id: 'rallygo',   label: 'RallyGo' },
+  { id: 'rallygo',   label: 'RallyHQ' },
   { id: 'logistics', label: 'Rally Logistics' },
 ]
 

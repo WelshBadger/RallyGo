@@ -12,7 +12,7 @@ function Logo() {
         <path d="M8 10 L14 3 L20 10 L14 17 Z" fill="#E24B4A" opacity="0.45" />
       </svg>
       <span className="text-white font-semibold text-base tracking-tight">
-        Rally<span className="text-rl-accent">Go</span>
+        Rally<span className="text-rl-accent">HQ</span>
       </span>
     </Link>
   )
@@ -65,8 +65,7 @@ export default function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            <NavLink to="/calendar" active={isActive('/calendar')}>Calendar</NavLink>
-            {isOrganiser && (
+            {(isOrganiser || isSuperAdmin) && (
               <NavLink to="/organiser" active={isActive('/organiser')}>Dashboard</NavLink>
             )}
             {isSuperAdmin && (
@@ -92,8 +91,7 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link to="/login" className="text-white/50 hover:text-white text-sm transition-colors">Sign in</Link>
-                <Link to="/register" className="rl-btn-primary text-xs px-4 py-2">Register</Link>
+                <Link to="/login" className="text-white/50 hover:text-white text-sm transition-colors">Organiser sign in</Link>
               </>
             )}
           </div>
@@ -146,13 +144,13 @@ export default function Navbar() {
 
             {/* Nav links */}
             <div className="px-3 py-3 space-y-1">
-              <MobileNavLink to="/calendar" active={isActive('/calendar')} onClick={() => setMenuOpen(false)} icon={
+              <MobileNavLink to="/" active={isActive('/')} onClick={() => setMenuOpen(false)} icon={
                 <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2 6.5L8 2l6 4.5V14a.5.5 0 01-.5.5h-3.75v-3.75h-3.5V14.5H2.5A.5.5 0 012 14V6.5z" />
                 </svg>
-              }>Calendar</MobileNavLink>
+              }>Home</MobileNavLink>
 
-              {isOrganiser && (
+              {(isOrganiser || isSuperAdmin) && (
                 <MobileNavLink to="/organiser" active={isActive('/organiser')} onClick={() => setMenuOpen(false)} icon={
                   <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
                     <rect x="2" y="2" width="5.5" height="5.5" rx="1" />
@@ -184,20 +182,13 @@ export default function Navbar() {
                   Sign out
                 </button>
               ) : (
-                <div className="space-y-2 pt-2">
+                <div className="pt-2">
                   <Link
                     to="/login"
                     onClick={() => setMenuOpen(false)}
                     className="block text-center w-full py-3 rounded-xl border border-white/10 text-white/70 text-sm hover:border-white/25 transition-all no-underline"
                   >
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/register"
-                    onClick={() => setMenuOpen(false)}
-                    className="block text-center w-full py-3 rounded-xl bg-rl-accent text-white text-sm font-medium hover:bg-rl-accent/90 transition-all no-underline"
-                  >
-                    Register
+                    Organiser sign in
                   </Link>
                 </div>
               )}

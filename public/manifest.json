@@ -1,6 +1,6 @@
 {
-  "name": "RallyGo",
-  "short_name": "RallyGo",
+  "name": "RallyHQ",
+  "short_name": "RallyHQ",
   "description": "Official event information platform for rally motorsport",
   "start_url": "/",
   "display": "standalone",

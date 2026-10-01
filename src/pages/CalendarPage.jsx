@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatDateRange } from '../lib/dateUtils'
+import { getStoredCode } from '../lib/rallyAccess'
+import BackButton from '../components/BackButton'
 
 const SURFACE = {
   gravel:     { bg: 'bg-amber-500',   light: 'bg-amber-500/15',  border: 'border-amber-500/40',  text: 'text-amber-300',   dot: 'bg-amber-400',   label: 'Gravel Rally' },
@@ -117,11 +119,15 @@ export default function CalendarPage() {
   return (
     <main className="max-w-5xl mx-auto px-4 py-8 sm:py-10">
 
+      <div className="mb-5">
+        <BackButton to="/competitor" label="Back" />
+      </div>
+
       {/* Header row */}
       <div className="flex items-end justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-0.5">UK Rally Calendar</h1>
-          <p className="text-white/35 text-sm">{loading ? '…' : `${confirmedCount} confirmed events · 2026 season`}</p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-0.5">Rally info</h1>
+          <p className="text-white/35 text-sm">{loading ? '…' : `UK rally calendar · ${confirmedCount} confirmed events`}</p>
         </div>
 
         {/* View toggle */}
@@ -375,7 +381,7 @@ function EventSheet({ event, onClose }) {
               to={`/event/${event.rally_id}`}
               className="flex-1 py-2.5 rounded-xl bg-rl-accent text-white text-sm font-medium text-center no-underline hover:bg-rl-accent/90 transition-all"
             >
-              Open on RallyGo →
+              Open rally info →
             </Link>
           )}
         </div>
@@ -443,6 +449,7 @@ function ListCard({ event, isUpNext }) {
   const surf = SURFACE[event.surface] || SURFACE.mixed
   const isCancelled = event.status === 'cancelled'
   const isRallyGo = !!event.rally_id
+  const isUnlocked = isRallyGo && !!getStoredCode(event.rally_id)
   const card = (
     <div className={`relative h-full rounded-xl border overflow-hidden transition-all duration-150 ${
       isCancelled ? 'border-white/5 bg-white/2 opacity-45'
@@ -469,7 +476,7 @@ function ListCard({ event, isUpNext }) {
           </div>
           {isCancelled
             ? <span className="flex-shrink-0 text-[10px] font-semibold text-red-400 bg-red-400/10 border border-red-400/20 px-2 py-0.5 rounded-full">Cancelled</span>
-            : isRallyGo ? <span className="flex-shrink-0 text-[10px] font-semibold text-rl-accent bg-rl-accent/10 border border-rl-accent/20 px-2 py-0.5 rounded-full">On RallyGo ›</span>
+            : isRallyGo ? <span className="flex-shrink-0 text-[10px] font-semibold text-rl-accent bg-rl-accent/10 border border-rl-accent/20 px-2 py-0.5 rounded-full">{isUnlocked ? 'Open ›' : 'Code required'}</span>
             : null}
         </div>
         <h3 className={`font-semibold text-[15px] leading-snug mb-1.5 ${isCancelled ? 'line-through text-white/30' : 'text-white'}`}>{event.name}</h3>

@@ -106,7 +106,7 @@ export default function WeatherPanel({ rally }) {
   if (status === 'loading') return <p className="text-white/40 text-sm">Loading the forecast…</p>
   if (status === 'none') return (
     <div className="bg-rl-card border border-white/10 rounded-xl p-5">
-      <p className="text-white/60 text-sm">No location set for this rally yet, so I can't pull the weather. Add a service-area address or postcode on RallyGo and it'll appear here.</p>
+      <p className="text-white/60 text-sm">No location set for this rally yet, so I can't pull the weather. Add a service-area address or postcode on RallyHQ and it'll appear here.</p>
     </div>
   )
   if (!state) return <p className="text-white/40 text-sm">{err || 'No forecast available.'}</p>

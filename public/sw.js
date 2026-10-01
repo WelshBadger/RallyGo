@@ -122,7 +122,7 @@ self.addEventListener('push', event => {
   let data = {}
   try { data = event.data.json() } catch { return }
 
-  const title = data.title || 'RallyGo'
+  const title = data.title || 'RallyHQ'
   const options = {
     body: data.body || 'New update',
     icon: data.icon || '/icons/icon-192.png',

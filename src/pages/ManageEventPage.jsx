@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import AccessCodeCard from '../components/AccessCodeCard'
 import toast from 'react-hot-toast'
 import BackButton from '../components/BackButton'
 import { formatDistanceToNow } from '../lib/dateUtils'
@@ -662,6 +663,8 @@ export default function ManageEventPage() {
           <button onClick={handleDeleteEvent} className="text-xs text-red-400/60 hover:text-red-400 border border-red-400/20 hover:border-red-400/40 px-3 py-1.5 rounded-lg transition-all">Delete event</button>
         </div>
       </div>
+
+      <AccessCodeCard rallyId={rallyId} />
 
       {/* Surface type */}
       <div className="bg-rl-card border border-white/10 rounded-xl p-4 mb-5">

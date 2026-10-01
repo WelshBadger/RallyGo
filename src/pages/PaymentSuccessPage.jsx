@@ -29,7 +29,7 @@ export default function PaymentSuccessPage() {
 
         <h1 className="text-2xl font-medium text-white mb-2">Payment confirmed</h1>
         <p className="text-white/45 text-sm mb-7">
-          Your event is now live on RallyGo. Start uploading documents from your dashboard.
+          Your event is now live on RallyHQ. Start uploading documents from your dashboard.
         </p>
 
         <div className="flex flex-col gap-3">

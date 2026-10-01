@@ -151,7 +151,7 @@ export default function SectionPage() {
           <div className="bg-rl-card border border-white/10 rounded-2xl divide-y divide-white/8">
             {rally.regulations_data.rallyHQ && (
               <div className="px-4 py-4">
-                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Rally HQ</p>
+                <p className="text-white/35 text-[11px] uppercase tracking-wide mb-1">Event HQ</p>
                 <p className="text-white text-sm leading-snug">{rally.regulations_data.rallyHQ}</p>
               </div>
             )}

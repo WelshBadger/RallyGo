@@ -107,7 +107,7 @@ export default function CalendarEventPage() {
                 to={`/event/${event.rally_id}`}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-rl-accent text-white text-sm font-medium no-underline hover:bg-rl-accent/90 transition-all"
               >
-                Open on RallyGo
+                Open rally info
                 <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
                   <path fillRule="evenodd" d="M8.22 2.97a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06l2.97-2.97H3.75a.75.75 0 010-1.5h7.44L8.22 4.03a.75.75 0 010-1.06z" clipRule="evenodd" />
                 </svg>

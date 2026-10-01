@@ -1,8 +1,10 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { useState, useEffect } from 'react'
 import Navbar from './components/Navbar'
-import HomePage from './pages/HomePage'
+import RallyCodeGate from './components/RallyCodeGate'
+import ChoicePage from './pages/ChoicePage'
+import CompetitorPage from './pages/CompetitorPage'
 import CalendarPage from './pages/CalendarPage'
 import CalendarEventPage from './pages/CalendarEventPage'
 import EventPage from './pages/EventPage'
@@ -19,24 +21,19 @@ import NotFoundPage from './pages/NotFoundPage'
 
 function ProtectedOrganiser({ children }) {
   const { user, profile, loading } = useAuth()
+  const location = useLocation()
   if (loading) return <div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/login" state={{ returnTo: location.pathname }} replace />
   if (profile?.role !== 'organiser' && !profile?.is_super_admin) return <Navigate to="/" replace />
   return children
 }
 
 function ProtectedAdmin({ children }) {
   const { user, profile, loading } = useAuth()
+  const location = useLocation()
   if (loading) return <div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/login" state={{ returnTo: location.pathname }} replace />
   if (!profile?.is_super_admin) return <Navigate to="/" replace />
-  return children
-}
-
-function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>
-  if (!user) return <Navigate to="/login" replace />
   return children
 }
 
@@ -83,7 +80,7 @@ function SplashScreen({ onDone }) {
 
       {/* Wordmark */}
       <div style={{ fontSize: 30, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px', marginBottom: 8 }}>
-        Rally<span style={{ color: '#e63946' }}>Go</span>
+        Rally<span style={{ color: '#e63946' }}>HQ</span>
       </div>
 
       {/* Tagline */}
@@ -122,13 +119,14 @@ export default function App() {
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <Navbar />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<ChoicePage />} />
+        <Route path="/competitor" element={<CompetitorPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/calendar/event/:id" element={<CalendarEventPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/event/:rallyId" element={<EventPage />} />
-        <Route path="/event/:rallyId/:section" element={<ProtectedRoute><SectionPage /></ProtectedRoute>} />
+        <Route path="/event/:rallyId" element={<RallyCodeGate><EventPage /></RallyCodeGate>} />
+        <Route path="/event/:rallyId/:section" element={<RallyCodeGate><SectionPage /></RallyCodeGate>} />
         <Route path="/news" element={<NewsIndexPage />} />
         <Route path="/news/:id" element={<NewsPostPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
