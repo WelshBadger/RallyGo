@@ -286,8 +286,7 @@ function ListCard({ event, isUpNext }) {
           </div>
           {isCancelled
             ? <span className="flex-shrink-0 text-[10px] font-semibold text-red-400 bg-red-400/10 border border-red-400/20 px-2 py-0.5 rounded-full">Cancelled</span>
-            : isRallyGo ? <span className="flex-shrink-0 text-[10px] font-semibold text-rl-accent bg-rl-accent/10 border border-rl-accent/20 px-2 py-0.5 rounded-full">{isUnlocked ? 'Open ›' : 'Code required'}</span>
-            : <span className="flex-shrink-0 text-[10px] font-medium text-white/40 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">Date only</span>}
+            : <span className="flex-shrink-0 text-[10px] font-semibold text-rl-accent bg-rl-accent/10 border border-rl-accent/20 px-2 py-0.5 rounded-full">{isUnlocked ? 'Open ›' : 'Code required'}</span>}
         </div>
         <h3 className={`font-semibold text-[15px] leading-snug mb-1.5 ${isCancelled ? 'line-through text-white/30' : 'text-white'}`}>{event.name}</h3>
         <p className="text-white/35 text-xs">

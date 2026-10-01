@@ -32,7 +32,7 @@ export default function LoginPage() {
         })
       }
       toast.success('Account created — welcome!')
-      navigate(returnTo)
+      navigate('/subscription', { state: { returnTo } })
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) { toast.error(error.message); setLoading(false); return }

@@ -7,6 +7,7 @@ import PackPage from './pages/PackPage'
 import SharedPackPage from './pages/SharedPackPage'
 import GuestJoinPage from './pages/GuestJoinPage'
 import AccountPage from './pages/AccountPage'
+import SubscriptionPage from './pages/SubscriptionPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function PrivateRoute({ children }) {
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/pack/cal/:calId" element={<PrivateRoute><PackPage /></PrivateRoute>} />
         <Route path="/pack/:rallyId" element={<PrivateRoute><PackPage /></PrivateRoute>} />
         <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
+        <Route path="/subscription" element={<PrivateRoute><SubscriptionPage /></PrivateRoute>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>

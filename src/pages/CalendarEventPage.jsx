@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatDateRange } from '../lib/dateUtils'
 import BackButton from '../components/BackButton'
+import { useAuth } from '../context/AuthContext'
+import { CodePrompt } from '../components/RallyCodeGate'
+import { checkRallyCode, storeCode } from '../lib/rallyAccess'
 
 const SURFACE = {
   gravel:      { bg: 'bg-amber-500',  light: 'bg-amber-500/15',  border: 'border-amber-500/40',  text: 'text-amber-300',  dot: 'bg-amber-400',  label: 'Gravel' },
@@ -26,6 +29,30 @@ export default function CalendarEventPage() {
   const { id } = useParams()
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
+  const { isSuperAdmin, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
+  const [code, setCode] = useState('')
+  const [checking, setChecking] = useState(false)
+  const [codeError, setCodeError] = useState('')
+
+  // Competitors need the organiser's code for every rally. A calendar-only
+  // event has no rally (and so no code) behind it yet.
+  async function handleCode(e) {
+    e.preventDefault()
+    const entered = code.trim().toUpperCase()
+    if (!entered) return
+    if (!event.rally_id) {
+      setCodeError('The organisers have not published rally information for this event yet.')
+      return
+    }
+    setChecking(true)
+    const ok = await checkRallyCode(event.rally_id, entered)
+    setChecking(false)
+    if (ok === null) { setCodeError('Could not check the code. Check your connection and try again.'); return }
+    if (!ok) { setCodeError('That code is not right for this rally.'); return }
+    storeCode(event.rally_id, entered)
+    navigate(`/event/${event.rally_id}`, { replace: true })
+  }
 
   useEffect(() => {
     supabase
@@ -36,7 +63,7 @@ export default function CalendarEventPage() {
       .then(({ data }) => { setEvent(data); setLoading(false) })
   }, [id])
 
-  if (loading) return (
+  if (loading || authLoading) return (
     <main className="max-w-2xl mx-auto px-4 py-10">
       <div className="h-64 bg-white/5 rounded-2xl animate-pulse" />
     </main>
@@ -47,6 +74,19 @@ export default function CalendarEventPage() {
       <p className="text-white/40">Event not found.</p>
       <BackButton to="/calendar" label="Calendar" />
     </main>
+  )
+
+  if (!isSuperAdmin) return (
+    <CodePrompt
+      title={event.name}
+      date={formatDateRange(event.date, event.end_date)}
+      location={event.location}
+      code={code}
+      onChange={(v) => { setCode(v); setCodeError('') }}
+      onSubmit={handleCode}
+      checking={checking}
+      error={codeError}
+    />
   )
 
   const surf = SURFACE[event.surface] || SURFACE.mixed

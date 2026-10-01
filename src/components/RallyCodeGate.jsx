@@ -74,6 +74,22 @@ export default function RallyCodeGate({ children }) {
   }
 
   return (
+    <CodePrompt
+      title={rally ? rally.name : 'Rally info'}
+      date={rally ? formatDateRange(rally.date, rally.end_date) : ''}
+      location={rally?.location}
+      code={code}
+      onChange={(v) => { setCode(v); setError('') }}
+      onSubmit={handleSubmit}
+      checking={checking}
+      error={error}
+    />
+  )
+}
+
+// The "enter the organiser's code" screen, shared with calendar-only events
+export function CodePrompt({ title, date, location, code, onChange, onSubmit, checking, error }) {
+  return (
     <main className="min-h-[70vh] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-6">
@@ -87,25 +103,25 @@ export default function RallyCodeGate({ children }) {
           </svg>
         </div>
 
-        <h1 className="text-2xl font-medium text-white mb-1">{rally ? rally.name : 'Rally info'}</h1>
-        {rally && (
+        <h1 className="text-2xl font-medium text-white mb-1">{title}</h1>
+        {date && (
           <p className="text-white/40 text-sm mb-1">
-            {formatDateRange(rally.date, rally.end_date)}
-            {rally.location && <><span className="text-white/20 mx-1.5">·</span>{rally.location}</>}
+            {date}
+            {location && <><span className="text-white/20 mx-1.5">·</span>{location}</>}
           </p>
         )}
         <p className="text-white/45 text-sm mt-4 mb-5">
           Enter the access code from the rally organisers to open this event.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={onSubmit} className="space-y-3">
           <div>
             <label className="rl-label" htmlFor="rally-code">Rally code</label>
             <input
               id="rally-code"
               type="text"
               value={code}
-              onChange={(e) => { setCode(e.target.value); setError('') }}
+              onChange={(e) => onChange(e.target.value)}
               autoCapitalize="characters"
               autoCorrect="off"
               autoComplete="off"

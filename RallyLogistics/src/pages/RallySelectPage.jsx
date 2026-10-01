@@ -40,17 +40,6 @@ function EventCard({ e, highlight }) {
             <span>{fmt(e.date)}{e.end_date && e.end_date !== e.date ? ` – ${fmt(e.end_date)}` : ''}</span>
             {e.location && <span>{e.location}</span>}
           </div>
-          <div className="mt-2">
-            {hasFull ? (
-              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-500/12 text-green-600 border border-green-500/25 font-medium">
-                ✓ Full details available
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/40 border border-white/10 font-medium">
-                Calendar listing · plan your own pack
-              </span>
-            )}
-          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {countdown && (
@@ -121,6 +110,75 @@ function SharedCard({ p }) {
   )
 }
 
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const DAY_HEADERS = ['Mo','Tu','We','Th','Fr','Sa','Su']
+const SURFACE_DOT = { gravel: '#f59e0b', mixed: '#f59e0b', tarmac: '#3b82f6', road_rally: '#8b5cf6', closed_road: '#8b5cf6' }
+
+// Local-time YYYY-MM-DD (toISOString would shift the day during BST)
+function toISO(date) {
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${m}-${d}`
+}
+
+const onDay = (e, day) => day >= e.date && day <= (e.end_date || e.date)
+
+// Compact month grid: a dot per rally on each day; tapping a day filters the list
+function MonthGrid({ year, month, events, today, selectedDay, onSelectDay, onPrev, onNext }) {
+  const startOffset = (new Date(year, month, 1).getDay() + 6) % 7
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const days = Array(startOffset).fill(null)
+  for (let d = 1; d <= daysInMonth; d++) days.push(toISO(new Date(year, month, d)))
+  const arrow = 'w-9 h-9 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/8 transition-all'
+  return (
+    <div className="bg-rl-card border border-white/10 rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/8">
+        <button onClick={onPrev} aria-label="Previous month" className={arrow}>‹</button>
+        <span className="text-white font-semibold text-sm">{MONTHS[month]} {year}</span>
+        <button onClick={onNext} aria-label="Next month" className={arrow}>›</button>
+      </div>
+      <div className="px-2 pb-2">
+        <div className="grid grid-cols-7">
+          {DAY_HEADERS.map(d => (
+            <div key={d} className="py-1.5 text-center text-[10px] font-medium text-white/25 uppercase tracking-wider">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-y-0.5">
+          {days.map((day, i) => {
+            if (!day) return <div key={i} />
+            const dayEvents = events.filter(e => onDay(e, day))
+            const hasEvents = dayEvents.length > 0
+            return (
+              <button
+                key={day}
+                type="button"
+                disabled={!hasEvents}
+                onClick={() => onSelectDay(day)}
+                className={`h-10 flex flex-col items-center justify-center gap-0.5 rounded-lg transition-all ${
+                  day === selectedDay ? 'bg-rl-accent/10 ring-1 ring-rl-accent/40' : hasEvents ? 'hover:bg-white/8' : ''
+                }`}
+              >
+                <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs ${
+                  day === today ? 'bg-rl-accent text-white font-semibold'
+                  : hasEvents ? 'text-white font-semibold'
+                  : 'text-white/35'
+                }`}>
+                  {Number(day.slice(8))}
+                </span>
+                <span className="flex gap-0.5 h-1.5">
+                  {dayEvents.slice(0, 3).map(e => (
+                    <span key={e.id} className="w-1.5 h-1.5 rounded-full" style={{ background: SURFACE_DOT[e.surface] || SURFACE_DOT.mixed }} />
+                  ))}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SectionLabel({ label }) {
   return (
     <div className="flex items-center gap-3 mb-3 mt-6 first:mt-0">
@@ -141,7 +199,17 @@ export default function RallySelectPage() {
   const [adding, setAdding] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ name: '', date: '', end_date: '', location: '' })
-  const today = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const today = useMemo(() => toISO(new Date()), [])
+  const [calYear, setCalYear] = useState(() => new Date().getFullYear())
+  const [calMonth, setCalMonth] = useState(() => new Date().getMonth())
+  const [selectedDay, setSelectedDay] = useState(null)
+
+  function changeMonth(delta) {
+    const d = new Date(calYear, calMonth + delta, 1)
+    setCalYear(d.getFullYear())
+    setCalMonth(d.getMonth())
+    setSelectedDay(null)
+  }
 
   useEffect(() => {
     if (authLoading) return
@@ -218,9 +286,11 @@ export default function RallySelectPage() {
     )
   }, [events, search])
 
-  const upcoming = filtered.filter(e => (e.end_date || e.date) >= today)
-  const past = filtered.filter(e => (e.end_date || e.date) < today)
-  const next = upcoming[0]
+  const next = events.find(e => (e.end_date || e.date) >= today)
+  const monthFirst = toISO(new Date(calYear, calMonth, 1))
+  const monthLast = toISO(new Date(calYear, calMonth + 1, 0))
+  const monthEvents = events.filter(e => e.date <= monthLast && (e.end_date || e.date) >= monthFirst)
+  const dayEvents = selectedDay ? monthEvents.filter(e => onDay(e, selectedDay)) : monthEvents
 
   if (loading) {
     return (
@@ -245,7 +315,7 @@ export default function RallySelectPage() {
       <p className="text-white/40 text-xs mb-4">
         {user
           ? "Search the RallyHQ calendar, or add your own rally if it isn't listed."
-          : 'Browse the RallyHQ calendar. Sign in or create an account to open a rally and build your logistics pack.'}
+          : 'Pick a rally from the calendar. You will be asked to sign in or register to open it.'}
       </p>
 
       {/* Add-your-own-rally form */}
@@ -282,7 +352,7 @@ export default function RallySelectPage() {
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search rally, location or series…"
+          placeholder="Search all rallies, locations or series…"
           className="rl-input w-full pl-9 text-sm"
         />
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" viewBox="0 0 20 20" fill="currentColor">
@@ -310,28 +380,52 @@ export default function RallySelectPage() {
         </>
       )}
 
-      {filtered.length === 0 && customPacks.length === 0 && (
-        <div className="text-center py-16">
-          <p className="text-white/20 text-4xl mb-3">🏁</p>
-          <p className="text-white/40 text-sm">{search ? 'No events match your search.' : 'No events yet — add your own rally to get started.'}</p>
-        </div>
-      )}
-
-      {upcoming.length > 0 && (
+      {search.trim() ? (
         <>
-          <SectionLabel label={customPacks.length > 0 && !search ? 'RallyHQ calendar' : 'Upcoming'} />
-          <div className="space-y-2">
-            {upcoming.map(e => <EventCard key={e.id} e={e} highlight={e.id === next?.id} />)}
-          </div>
+          <SectionLabel label="Search results" />
+          {filtered.length === 0 ? (
+            <p className="text-white/40 text-sm text-center py-8">No events match your search.</p>
+          ) : (
+            <div className="space-y-2">
+              {filtered.map(e => <EventCard key={e.id} e={e} highlight={e.id === next?.id} />)}
+            </div>
+          )}
         </>
-      )}
-
-      {past.length > 0 && (
+      ) : (
         <>
-          <SectionLabel label="Past" />
-          <div className="space-y-2 opacity-60">
-            {past.map(e => <EventCard key={e.id} e={e} highlight={false} />)}
+          <SectionLabel label="Rally calendar" />
+          <MonthGrid
+            year={calYear}
+            month={calMonth}
+            events={monthEvents}
+            today={today}
+            selectedDay={selectedDay}
+            onSelectDay={day => setSelectedDay(d => (d === day ? null : day))}
+            onPrev={() => changeMonth(-1)}
+            onNext={() => changeMonth(1)}
+          />
+
+          <div className="flex items-center gap-3 mb-3 mt-6">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-white/30">
+              {selectedDay
+                ? new Date(selectedDay + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long' })
+                : `${MONTHS[calMonth]} ${calYear}`}
+            </span>
+            <div className="flex-1 h-px bg-white/8" />
+            {selectedDay && (
+              <button onClick={() => setSelectedDay(null)} className="text-xs text-white/50 hover:text-white transition-colors">
+                Show whole month
+              </button>
+            )}
           </div>
+
+          {dayEvents.length === 0 ? (
+            <p className="text-white/40 text-sm text-center py-8">No rallies {selectedDay ? 'on this day' : 'this month'}.</p>
+          ) : (
+            <div className="space-y-2">
+              {dayEvents.map(e => <EventCard key={e.id} e={e} highlight={e.id === next?.id} />)}
+            </div>
+          )}
         </>
       )}
     </main>
