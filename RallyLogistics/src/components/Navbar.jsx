@@ -11,7 +11,7 @@ export default function Navbar() {
             <span className="text-white font-black text-xs tracking-tight">RL</span>
           </div>
           <div>
-            <span className="text-white font-semibold text-sm leading-none">Rally Logistics</span>
+            <span className="font-semibold text-sm leading-none" style={{ color: '#fff' }}>Rally Logistics</span>
             <p className="text-white/30 text-[10px] leading-none mt-0.5">by RallyHQ</p>
           </div>
         </Link>

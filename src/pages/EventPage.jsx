@@ -8,6 +8,7 @@ import { formatDateRange } from '../lib/dateUtils'
 import BackButton from '../components/BackButton'
 import WeatherPanel from '../components/WeatherPanel'
 import { LOGISTICS_URL } from '../lib/config'
+import { getStoredCode } from '../lib/rallyAccess'
 
 // Public VAPID key for push subscriptions
 const VAPID_PUBLIC_KEY = 'BIcwQ-AgPS8rQeybSdJEYAohASdl7C3vx9ls5N5BWx0qC_2Av_gx1k-USjFEeZmjeM-KYGua2tKWqIYNWvPWZc8'
@@ -107,7 +108,7 @@ export default function EventPage() {
   // On iOS, push only works when installed to home screen (standalone mode)
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
   useEffect(() => {
-    if (!user || !('Notification' in window) || !('serviceWorker' in navigator)) return
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
     if (isIOS && !isStandalone) return
     // Check actual subscription state for this rally
@@ -118,19 +119,13 @@ export default function EventPage() {
       const sub = await reg.pushManager.getSubscription()
       if (!sub) { setNotifStatus('default'); return }
       // Check if this subscription is saved for this rally
-      const { data } = await supabase
-        .from('push_subscriptions')
-        .select('id')
-        .eq('endpoint', sub.endpoint)
-        .eq('rally_id', rallyId)
-        .maybeSingle()
+      const { data } = await supabase.rpc('has_rally_push', { p_rally_id: rallyId, p_endpoint: sub.endpoint })
       setNotifStatus(data ? 'granted' : 'default')
     }
     checkSub()
-  }, [user, rallyId])
+  }, [rallyId])
 
   async function subscribeForPush() {
-    if (!user) return
     setNotifStatus('subscribing')
     try {
       const permission = await Notification.requestPermission()
@@ -143,16 +138,16 @@ export default function EventPage() {
       })
 
       const { endpoint, keys } = sub.toJSON()
-      await supabase.from('push_subscriptions').upsert({
-        user_id: user.id,
-        rally_id: rallyId,
-        endpoint,
-        p256dh: keys.p256dh,
-        auth: keys.auth,
-        app: 'rallygo',
-      }, { onConflict: 'endpoint,rally_id,app' })
+      // Competitors have no account — the rally code (or being the organiser) authorises the device
+      const { data: saved } = await supabase.rpc('subscribe_rally_push', {
+        p_rally_id: rallyId,
+        p_code: getStoredCode(rallyId) || '',
+        p_endpoint: endpoint,
+        p_p256dh: keys.p256dh,
+        p_auth: keys.auth,
+      })
 
-      setNotifStatus('granted')
+      setNotifStatus(saved ? 'granted' : 'default')
     } catch {
       setNotifStatus('default')
     }
@@ -164,8 +159,7 @@ export default function EventPage() {
       const sub = await reg.pushManager.getSubscription()
       if (sub) {
         const { endpoint } = sub.toJSON()
-        await supabase.from('push_subscriptions').delete()
-          .eq('endpoint', endpoint).eq('rally_id', rallyId)
+        await supabase.rpc('unsubscribe_rally_push', { p_rally_id: rallyId, p_endpoint: endpoint })
         await sub.unsubscribe()
       }
       setNotifStatus('default')
@@ -271,7 +265,7 @@ export default function EventPage() {
         </div>
 
         {/* Subtle granted indicator in header */}
-        {user && notifStatus === 'granted' && (
+        {notifStatus === 'granted' && (
           <div className="flex items-center gap-2 py-3 border-t border-white/8">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
             <span className="text-white/30 text-xs">Notifications on for this event</span>
@@ -280,7 +274,7 @@ export default function EventPage() {
       </div>
 
       {/* Push notification banner */}
-      {user && notifStatus === 'default' && (
+      {notifStatus === 'default' && (
         <div className="mb-5 bg-rl-accent/10 border border-rl-accent/30 rounded-xl p-4 flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-rl-accent/20 flex items-center justify-center flex-shrink-0">
             <svg className="w-5 h-5 text-rl-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
@@ -301,14 +295,14 @@ export default function EventPage() {
         </div>
       )}
 
-      {user && notifStatus === 'subscribing' && (
+      {notifStatus === 'subscribing' && (
         <div className="mb-5 bg-rl-accent/10 border border-rl-accent/30 rounded-xl p-4 flex items-center gap-3">
           <span className="w-4 h-4 border-2 border-rl-accent/30 border-t-rl-accent rounded-full animate-spin flex-shrink-0" />
           <p className="text-white/60 text-sm">Enabling notifications…</p>
         </div>
       )}
 
-      {user && notifStatus === 'granted' && (
+      {notifStatus === 'granted' && (
         <div className="mb-5 bg-white/3 border border-white/8 rounded-xl p-4 flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center flex-shrink-0">
             <svg className="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
@@ -330,7 +324,7 @@ export default function EventPage() {
         </div>
       )}
 
-      {user && notifStatus === 'denied' && (
+      {notifStatus === 'denied' && (
         <div className="mb-5 bg-white/3 border border-white/8 rounded-xl p-4 flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
             <svg className="w-5 h-5 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
