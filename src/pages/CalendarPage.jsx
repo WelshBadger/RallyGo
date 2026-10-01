@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatDateRange } from '../lib/dateUtils'
 import { getStoredCode } from '../lib/rallyAccess'
@@ -17,71 +17,33 @@ const SURFACE = {
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const DAY_HEADERS = ['Mo','Tu','We','Th','Fr','Sa','Su']
 
-// Returns all calendar day cells for a given month (Mon-start, padded to full weeks)
-function buildCalendarDays(year, month) {
-  const first = new Date(year, month, 1)
-  const last  = new Date(year, month + 1, 0)
-  const startOffset = (first.getDay() + 6) % 7 // Mon=0 … Sun=6
+// Local-time YYYY-MM-DD (toISOString would shift the day during BST)
+function toISO(date) {
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${m}-${d}`
+}
 
-  const days = []
-  // Leading days from prev month
-  for (let i = startOffset - 1; i >= 0; i--) {
-    days.push({ date: new Date(year, month, -i), current: false })
-  }
-  // Current month
-  for (let d = 1; d <= last.getDate(); d++) {
-    days.push({ date: new Date(year, month, d), current: true })
-  }
-  // Trailing days to complete last row
-  const tail = days.length % 7
-  if (tail > 0) {
-    for (let i = 1; i <= 7 - tail; i++) {
-      days.push({ date: new Date(year, month + 1, i), current: false })
-    }
-  }
+// Day cells for a month, Monday-first, with leading blanks
+function buildMonthDays(year, month) {
+  const startOffset = (new Date(year, month, 1).getDay() + 6) % 7
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const days = Array(startOffset).fill(null)
+  for (let d = 1; d <= daysInMonth; d++) days.push(toISO(new Date(year, month, d)))
   return days
 }
 
-function toISO(date) {
-  return date.toISOString().split('T')[0]
-}
-
-function eventsForDay(date, events) {
-  const d = toISO(date)
-  return events.filter(e => d >= e.date && d <= (e.end_date || e.date))
-}
-
-function isStart(date, event) {
-  return toISO(date) === event.date
-}
-
-function isEnd(date, event) {
-  return toISO(date) === (event.end_date || event.date)
-}
-
-// ─── List helpers ───────────────────────────────────────────────
-const LIST_MONTHS = MONTHS
-
-function groupByMonth(events) {
-  const groups = {}
-  for (const e of events) {
-    const d = new Date(e.date + 'T00:00:00')
-    const key = `${d.getFullYear()}-${d.getMonth()}`
-    if (!groups[key]) groups[key] = { year: d.getFullYear(), month: d.getMonth(), events: [] }
-    groups[key].events.push(e)
-  }
-  return Object.values(groups).sort((a, b) => a.year - b.year || a.month - b.month)
-}
+const onDay = (e, day) => day >= e.date && day <= (e.end_date || e.date)
 
 export default function CalendarPage() {
   const [events, setEvents]           = useState([])
   const [championships, setChampionships] = useState([])
   const [loading, setLoading]         = useState(true)
-  const [view, setView]               = useState('list')
-  const [selected, setSelected]       = useState(null)
   const [champFilter, setChampFilter] = useState('all')
+  const [selectedDay, setSelectedDay] = useState(null)
 
   const now = new Date()
+  const todayStr = toISO(now)
   const [calYear,  setCalYear]  = useState(now.getFullYear())
   const [calMonth, setCalMonth] = useState(now.getMonth())
 
@@ -96,8 +58,6 @@ export default function CalendarPage() {
     })
   }, [])
 
-  const calDays = useMemo(() => buildCalendarDays(calYear, calMonth), [calYear, calMonth])
-
   const filteredEvents = useMemo(() =>
     champFilter === 'all'
       ? events
@@ -105,51 +65,37 @@ export default function CalendarPage() {
     [events, champFilter]
   )
 
-  function prevMonth() {
-    if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11) }
-    else setCalMonth(m => m - 1)
-  }
-  function nextMonth() {
-    if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0) }
-    else setCalMonth(m => m + 1)
+  const days = useMemo(() => buildMonthDays(calYear, calMonth), [calYear, calMonth])
+
+  // Rallies that touch the month on show
+  const monthEvents = useMemo(() => {
+    const first = toISO(new Date(calYear, calMonth, 1))
+    const last  = toISO(new Date(calYear, calMonth + 1, 0))
+    return filteredEvents.filter(e => e.date <= last && (e.end_date || e.date) >= first)
+  }, [filteredEvents, calYear, calMonth])
+
+  const listEvents = selectedDay ? monthEvents.filter(e => onDay(e, selectedDay)) : monthEvents
+  const nextEventId = filteredEvents.find(e => e.status !== 'cancelled' && (e.end_date || e.date) >= todayStr)?.id
+
+  function changeMonth(delta) {
+    const d = new Date(calYear, calMonth + delta, 1)
+    setCalYear(d.getFullYear())
+    setCalMonth(d.getMonth())
+    setSelectedDay(null)
   }
 
   const confirmedCount = filteredEvents.filter(e => e.status !== 'cancelled').length
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-8 sm:py-10">
+    <main className="max-w-2xl mx-auto px-4 py-8 sm:py-10">
 
       <div className="mb-5">
         <BackButton to="/competitor" label="Back" />
       </div>
 
-      {/* Header row */}
-      <div className="flex items-end justify-between gap-4 mb-5">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-0.5">Rally info</h1>
-          <p className="text-white/35 text-sm">{loading ? '…' : `UK rally calendar · ${confirmedCount} confirmed events`}</p>
-        </div>
-
-        {/* View toggle */}
-        <div className="flex items-center bg-white/6 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
-          <button
-            onClick={() => setView('calendar')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'calendar' ? 'bg-white text-black' : 'text-white/50 hover:text-white'}`}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <rect x="2" y="3" width="12" height="11" rx="1.5" />
-              <path strokeLinecap="round" d="M2 6.5h12M5.5 2v2.5M10.5 2v2.5" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setView('list')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'list' ? 'bg-white text-black' : 'text-white/50 hover:text-white'}`}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" d="M4 4h8M4 8h8M4 12h8" />
-            </svg>
-          </button>
-        </div>
+      <div className="mb-5">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-0.5">Rally info</h1>
+        <p className="text-white/35 text-sm">{loading ? '…' : `UK rally calendar · ${confirmedCount} confirmed events`}</p>
       </div>
 
       {/* Championship filter chips */}
@@ -173,10 +119,10 @@ export default function CalendarPage() {
                 onClick={() => setChampFilter(active ? 'all' : c.short_name)}
                 className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
                   active
-                    ? 'text-white border-transparent'
+                    ? 'border-transparent'
                     : 'border-white/15 text-white/50 hover:text-white hover:border-white/30'
                 }`}
-                style={active ? { backgroundColor: c.color || '#E24B4A', borderColor: c.color || '#E24B4A' } : {}}
+                style={active ? { backgroundColor: c.color || '#E24B4A', borderColor: c.color || '#E24B4A', color: '#fff' } : {}}
               >
                 {c.short_name}
               </button>
@@ -186,261 +132,125 @@ export default function CalendarPage() {
       )}
 
       {loading ? (
-        <div className="h-96 bg-white/3 rounded-2xl animate-pulse" />
-      ) : view === 'calendar' ? (
-        <CalendarGrid
-          days={calDays}
-          events={filteredEvents}
-          year={calYear}
-          month={calMonth}
-          onPrev={prevMonth}
-          onNext={nextMonth}
-          onSelect={setSelected}
-          now={now}
-        />
+        <div className="h-72 bg-white/3 rounded-2xl animate-pulse" />
       ) : (
-        <ListView events={filteredEvents} now={now} />
-      )}
+        <>
+          <MonthGrid
+            days={days}
+            events={monthEvents}
+            year={calYear}
+            month={calMonth}
+            todayStr={todayStr}
+            selectedDay={selectedDay}
+            onSelectDay={day => setSelectedDay(d => (d === day ? null : day))}
+            onPrev={() => changeMonth(-1)}
+            onNext={() => changeMonth(1)}
+          />
 
-      {/* Surface legend */}
-      {!loading && (
-        <div className="mt-8 flex flex-wrap gap-4 items-center">
-          <span className="text-white/20 text-xs">Classification</span>
-          {['gravel', 'tarmac', 'road_rally'].map(key => {
-            const s = SURFACE[key]
-            return (
-              <span key={key} className="flex items-center gap-1.5 text-xs text-white/35">
-                <span className={`w-2 h-2 rounded-full ${s.dot}`} />
-                {s.label}
-              </span>
-            )
-          })}
-        </div>
-      )}
+          {/* Surface legend */}
+          <div className="mt-3 mb-6 flex flex-wrap gap-4 items-center">
+            {['gravel', 'tarmac', 'road_rally'].map(key => {
+              const s = SURFACE[key]
+              return (
+                <span key={key} className="flex items-center gap-1.5 text-xs text-white/35">
+                  <span className={`w-2 h-2 rounded-full ${s.dot}`} />
+                  {s.label}
+                </span>
+              )
+            })}
+          </div>
 
-      {/* Event detail sheet */}
-      {selected && (
-        <EventSheet event={selected} onClose={() => setSelected(null)} />
+          {/* Rallies for the month (or the tapped day) */}
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-xs font-semibold uppercase tracking-widest text-white/50 flex-shrink-0">
+              {selectedDay
+                ? new Date(selectedDay + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long' })
+                : `${MONTHS[calMonth]} ${calYear}`}
+            </span>
+            <div className="flex-1 h-px bg-white/8" />
+            {selectedDay && (
+              <button onClick={() => setSelectedDay(null)} className="text-xs text-white/50 hover:text-white transition-colors flex-shrink-0">
+                Show whole month
+              </button>
+            )}
+          </div>
+
+          {listEvents.length === 0 ? (
+            <p className="text-white/35 text-sm py-6 text-center">No rallies {selectedDay ? 'on this day' : 'this month'}.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {listEvents.map(event => <ListCard key={event.id} event={event} isUpNext={event.id === nextEventId} />)}
+            </div>
+          )}
+        </>
       )}
     </main>
   )
 }
 
-// ─── Calendar grid ──────────────────────────────────────────────
-function CalendarGrid({ days, events, year, month, onPrev, onNext, onSelect, now }) {
-  const todayStr = toISO(now)
-  const navigate = useNavigate()
-
+// ─── Compact month grid ─────────────────────────────────────────
+function MonthGrid({ days, events, year, month, todayStr, selectedDay, onSelectDay, onPrev, onNext }) {
   return (
     <div className="bg-white/3 border border-white/8 rounded-2xl overflow-hidden">
       {/* Month nav */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
-        <button onClick={onPrev} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/8 transition-all">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/8">
+        <button onClick={onPrev} aria-label="Previous month" className="w-9 h-9 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/8 transition-all">
           <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
             <path fillRule="evenodd" d="M9.78 4.22a.75.75 0 010 1.06L7.06 8l2.72 2.72a.75.75 0 11-1.06 1.06L5.47 8.53a.75.75 0 010-1.06l3.25-3.25a.75.75 0 011.06 0z" />
           </svg>
         </button>
-        <span className="text-white font-semibold text-base">{MONTHS[month]} {year}</span>
-        <button onClick={onNext} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/8 transition-all">
+        <span className="text-white font-semibold text-sm">{MONTHS[month]} {year}</span>
+        <button onClick={onNext} aria-label="Next month" className="w-9 h-9 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/8 transition-all">
           <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
             <path fillRule="evenodd" d="M6.22 4.22a.75.75 0 011.06 0l3.25 3.25a.75.75 0 010 1.06L7.28 11.78a.75.75 0 01-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 010-1.06z" />
           </svg>
         </button>
       </div>
 
-      {/* Day headers */}
-      <div className="grid grid-cols-7 border-b border-white/6">
-        {DAY_HEADERS.map(d => (
-          <div key={d} className="py-2 text-center text-[11px] font-medium text-white/25 uppercase tracking-wider">{d}</div>
-        ))}
-      </div>
-
-      {/* Day cells */}
-      <div className="grid grid-cols-7">
-        {days.map((day, i) => {
-          const dayStr  = toISO(day.date)
-          const isToday = dayStr === todayStr
-          const dayEvents = eventsForDay(day.date, events)
-          const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6
-
-          return (
-            <div
-              key={i}
-              className={`min-h-[72px] sm:min-h-[90px] border-b border-r border-white/5 p-1 sm:p-1.5 ${
-                !day.current ? 'opacity-25' : ''
-              } ${isWeekend && day.current ? 'bg-white/[0.02]' : ''}`}
-            >
-              {/* Day number */}
-              <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium mb-1 ${
-                isToday
-                  ? 'bg-rl-accent text-white'
-                  : day.current ? 'text-white/60' : 'text-white/20'
-              }`}>
-                {day.date.getDate()}
-              </div>
-
-              {/* Event pills */}
-              <div className="space-y-0.5">
-                {dayEvents.map(event => {
-                  const surf = SURFACE[event.surface] || SURFACE.mixed
-                  const start = isStart(day.date, event)
-                  const end   = isEnd(day.date, event)
-                  const cancelled = event.status === 'cancelled'
-                  const isRallyGo = !!event.rally_id
-
-                  const pill = (
-                    <div
-                      key={event.id}
-                      className={`w-full text-left flex items-center gap-1 transition-all group ${
-                        cancelled ? 'opacity-40' : 'cursor-pointer hover:opacity-90'
-                      }`}
-                    >
-                      <div className={`
-                        flex items-center overflow-hidden
-                        ${start ? 'rounded-l-sm pl-1' : 'pl-0'}
-                        ${end   ? 'rounded-r-sm pr-0.5' : 'pr-0'}
-                        ${surf.bg} h-5 w-full
-                        ${start && !end ? 'rounded-r-none' : ''}
-                        ${!start && end ? 'rounded-l-none' : ''}
-                        ${!start && !end ? 'rounded-none' : ''}
-                      `}>
-                        {start && (
-                          <span className={`text-[9px] sm:text-[10px] font-semibold text-white/90 truncate leading-none ${cancelled ? 'line-through' : ''}`}>
-                            {event.name}
-                          </span>
-                        )}
-                        {isRallyGo && start && (
-                          <span className="ml-auto flex-shrink-0 w-1 h-1 rounded-full bg-white/60 mr-1" />
-                        )}
-                      </div>
-                    </div>
-                  )
-
-                  return isRallyGo && !cancelled
-                    ? <Link key={event.id} to={`/event/${event.rally_id}`} className="block no-underline">{pill}</Link>
-                    : <Link key={event.id} to={`/calendar/event/${event.id}`} className="block no-underline">{pill}</Link>
-                })}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ─── Event detail bottom sheet ───────────────────────────────────
-function EventSheet({ event, onClose }) {
-  const surf = SURFACE[event.surface] || SURFACE.mixed
-  const isCancelled = event.status === 'cancelled'
-  const isRallyGo = !!event.rally_id
-
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div
-        className="relative bg-white border border-white/10 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 w-full sm:max-w-sm mx-auto"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Handle */}
-        <div className="flex justify-center mb-4 sm:hidden">
-          <div className="w-8 h-1 rounded-full bg-white/15" />
-        </div>
-
-        {/* Surface strip */}
-        <div className={`h-0.5 w-full rounded-full ${surf.bg} mb-4 opacity-70`} />
-
-        {/* Badges */}
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${surf.light} ${surf.text} ${surf.border}`}>
-            {surf.label}
-          </span>
-          {event.series?.filter(Boolean).map(s => (
-            <span key={s} className="text-[10px] text-white/35 bg-white/5 border border-white/8 px-2 py-0.5 rounded-full">{s}</span>
+      <div className="px-2 pb-2">
+        <div className="grid grid-cols-7">
+          {DAY_HEADERS.map(d => (
+            <div key={d} className="py-1.5 text-center text-[10px] font-medium text-white/25 uppercase tracking-wider">{d}</div>
           ))}
-          {isCancelled && (
-            <span className="text-[10px] font-semibold text-red-400 bg-red-400/10 border border-red-400/20 px-2 py-0.5 rounded-full">Cancelled</span>
-          )}
         </div>
 
-        <h3 className={`font-semibold text-xl mb-1 ${isCancelled ? 'line-through text-white/40' : 'text-white'}`}>
-          {event.name}
-        </h3>
-        <p className="text-white/40 text-sm mb-5">
-          {formatDateRange(event.date, event.end_date)}
-          {event.location && <span className="text-white/20 mx-1.5">·</span>}
-          {event.location}
-        </p>
-
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/12 text-white/50 text-sm hover:border-white/25 transition-all">
-            Close
-          </button>
-          {isRallyGo && !isCancelled && (
-            <Link
-              to={`/event/${event.rally_id}`}
-              className="flex-1 py-2.5 rounded-xl bg-rl-accent text-white text-sm font-medium text-center no-underline hover:bg-rl-accent/90 transition-all"
-            >
-              Open rally info →
-            </Link>
-          )}
+        <div className="grid grid-cols-7 gap-y-0.5">
+          {days.map((day, i) => {
+            if (!day) return <div key={i} />
+            const dayEvents = events.filter(e => onDay(e, day))
+            const isToday = day === todayStr
+            const isSelected = day === selectedDay
+            const hasEvents = dayEvents.length > 0
+            return (
+              <button
+                key={day}
+                type="button"
+                disabled={!hasEvents}
+                onClick={() => onSelectDay(day)}
+                className={`h-10 flex flex-col items-center justify-center gap-0.5 rounded-lg transition-all ${
+                  isSelected ? 'bg-rl-accent/10 ring-1 ring-rl-accent/40' : hasEvents ? 'hover:bg-white/8' : ''
+                }`}
+              >
+                <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs ${
+                  isToday ? 'bg-rl-accent text-white font-semibold'
+                  : hasEvents ? 'text-white font-semibold'
+                  : 'text-white/35'
+                }`}>
+                  {Number(day.slice(8))}
+                </span>
+                <span className="flex gap-0.5 h-1.5">
+                  {dayEvents.slice(0, 3).map(e => (
+                    <span
+                      key={e.id}
+                      className={`w-1.5 h-1.5 rounded-full ${(SURFACE[e.surface] || SURFACE.mixed).dot} ${e.status === 'cancelled' ? 'opacity-30' : ''}`}
+                    />
+                  ))}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
-    </div>
-  )
-}
-
-// ─── List view ───────────────────────────────────────────────────
-function ListView({ events, now }) {
-  const grouped = useMemo(() => groupByMonth(events), [events])
-  const todayStr = toISO(now)
-  const nextRef = useRef(null)
-  const scrolled = useRef(false)
-
-  // Find the next upcoming event and its month group
-  const { nextGroupKey, nextEventId } = useMemo(() => {
-    for (const group of grouped) {
-      const upcoming = group.events.find(e => e.status !== 'cancelled' && (e.end_date || e.date) >= todayStr)
-      if (upcoming) return {
-        nextGroupKey: `${group.year}-${group.month}`,
-        nextEventId: upcoming.id
-      }
-    }
-    return { nextGroupKey: null, nextEventId: null }
-  }, [grouped, todayStr])
-
-  useEffect(() => {
-    if (events.length === 0 || scrolled.current) return
-    scrolled.current = true
-    requestAnimationFrame(() => {
-      if (!nextRef.current) return
-      const top = nextRef.current.getBoundingClientRect().top + window.pageYOffset - 80
-      window.scrollTo({ top, behavior: 'smooth' })
-    })
-  }, [events])
-
-  return (
-    <div className="space-y-10">
-      {grouped.map(({ year, month, events: monthEvents }) => {
-        const key = `${year}-${month}`
-        const isPast    = new Date(year, month + 1, 0) < now
-        const isCurrent = new Date(year, month) <= now && now <= new Date(year, month + 1, 0)
-        const isNext    = key === nextGroupKey
-        return (
-          <section key={key} ref={isNext ? nextRef : null}>
-            <div className="flex items-center gap-3 mb-4">
-              <span className={`text-xs font-semibold uppercase tracking-widest flex-shrink-0 ${isCurrent || isNext ? 'text-rl-accent' : isPast ? 'text-white/20' : 'text-white/50'}`}>
-                {LIST_MONTHS[month]} {year}
-              </span>
-              {(isCurrent || isNext) && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />}
-              <div className="flex-1 h-px bg-white/6" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {monthEvents.map(event => <ListCard key={event.id} event={event} isUpNext={event.id === nextEventId} />)}
-            </div>
-          </section>
-        )
-      })}
     </div>
   )
 }
@@ -477,7 +287,7 @@ function ListCard({ event, isUpNext }) {
           {isCancelled
             ? <span className="flex-shrink-0 text-[10px] font-semibold text-red-400 bg-red-400/10 border border-red-400/20 px-2 py-0.5 rounded-full">Cancelled</span>
             : isRallyGo ? <span className="flex-shrink-0 text-[10px] font-semibold text-rl-accent bg-rl-accent/10 border border-rl-accent/20 px-2 py-0.5 rounded-full">{isUnlocked ? 'Open ›' : 'Code required'}</span>
-            : null}
+            : <span className="flex-shrink-0 text-[10px] font-medium text-white/40 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">Date only</span>}
         </div>
         <h3 className={`font-semibold text-[15px] leading-snug mb-1.5 ${isCancelled ? 'line-through text-white/30' : 'text-white'}`}>{event.name}</h3>
         <p className="text-white/35 text-xs">

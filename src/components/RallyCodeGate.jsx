@@ -40,7 +40,17 @@ export default function RallyCodeGate({ children }) {
   }, [rallyId])
 
   const isManager = !!user && (isSuperAdmin || (rally && rally.organiser_id === user.id))
-  if (unlocked || isManager) return children
+  if (unlocked) return children
+  if (isManager) return (
+    <>
+      <div className="max-w-4xl mx-auto px-4 pt-3">
+        <p className="text-xs text-white/50 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+          You're signed in as the organiser, so this rally opens without a code. Competitors are asked for the rally code.
+        </p>
+      </div>
+      {children}
+    </>
+  )
 
   // Signed-in users might be the organiser — wait until we know before asking for a code
   if (authLoading || (user && rally === null)) return (
