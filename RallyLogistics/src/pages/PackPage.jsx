@@ -5,6 +5,11 @@ import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import WeatherPanel from '../components/WeatherPanel'
 
+// Roadbooks: a labelled list (e.g. one per day). Older rallies only have roadbook_pdf_url.
+const roadbooksOf = r => (Array.isArray(r?.roadbook_files) && r.roadbook_files.length)
+  ? r.roadbook_files
+  : (r?.roadbook_pdf_url ? [{ id: 'roadbook', label: 'Roadbook', url: r.roadbook_pdf_url }] : [])
+
 // Re-encode any image (incl. iOS HEIC) to a right-sized JPEG so photo-library
 // uploads don't fail on format/size. Falls back to the original if decode fails.
 function reencodeImage(file, maxDim = 2400, quality = 0.85) {
@@ -268,7 +273,7 @@ export default function PackPage() {
     if (!rally && !pack) return
     const urls = []
     const push = arr => (arr || []).forEach(m => urls.push(typeof m === 'string' ? m : m?.url))
-    push(rally?.stage_maps); push(rally?.rally_schedule_files)
+    push(rally?.stage_maps); push(rally?.rally_schedule_files); push(roadbooksOf(rally))
     urls.push(rally?.route_kmz_url, rally?.route_overview_url, rally?.roadbook_pdf_url, rally?.regulations_pdf_url, rally?.final_instructions_url, rally?.logo_url)
     Object.values(rally?.stage_images || {}).forEach(v => push(v))
     push(pack?.stage_maps); push(pack?.rally_schedule_files); push(pack?.setup_sheet_urls)
@@ -4107,9 +4112,9 @@ function RallyScheduleTab({ pack, rally, onSave, carNumber }) {
 function DocumentsTab({ rally, docs }) {
   const regsUrl = rally?.regulations_pdf_url
   const fiUrl = rally?.final_instructions_pdf_url
-  const roadbookUrl = rally?.roadbook_pdf_url
+  const roadbooks = roadbooksOf(rally)
 
-  const hasAnything = regsUrl || fiUrl || roadbookUrl || docs?.length > 0
+  const hasAnything = regsUrl || fiUrl || roadbooks.length > 0 || docs?.length > 0
 
   if (!hasAnything) {
     return (
@@ -4167,8 +4172,8 @@ function DocumentsTab({ rally, docs }) {
         </a>
       )}
 
-      {roadbookUrl && (
-        <a href={roadbookUrl} target="_blank" rel="noopener noreferrer"
+      {roadbooks.map(rb => (
+        <a key={rb.id} href={rb.url} target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-4 bg-rl-card border border-white/10 rounded-xl px-4 py-3.5 no-underline hover:border-white/20 transition-all group">
           <div className="w-9 h-9 rounded-lg bg-orange-500/15 flex items-center justify-center flex-shrink-0">
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-orange-400">
@@ -4176,14 +4181,14 @@ function DocumentsTab({ rally, docs }) {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-medium text-sm">Roadbook</p>
+            <p className="text-white font-medium text-sm truncate">{rb.label === 'Roadbook' ? 'Roadbook' : `Roadbook — ${rb.label}`}</p>
             <p className="text-white/35 text-xs">PDF</p>
           </div>
           <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-white/25 group-hover:text-white/50 flex-shrink-0">
             <path fillRule="evenodd" d="M4.22 11.78a.75.75 0 010-1.06L9.44 5.5H5.75a.75.75 0 010-1.5h5.5a.75.75 0 01.75.75v5.5a.75.75 0 01-1.5 0V6.56l-5.22 5.22a.75.75 0 01-1.06 0z" clipRule="evenodd"/>
           </svg>
         </a>
-      )}
+      ))}
 
       {docs?.map((doc, i) => (
         <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer"

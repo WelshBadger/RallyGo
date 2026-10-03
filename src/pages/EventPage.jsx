@@ -38,6 +38,11 @@ function openFile(url) {
     .catch(() => { if (w) w.location = url })
 }
 
+// Roadbooks: a labelled list (e.g. one per day). Older rallies only have roadbook_pdf_url.
+const roadbooksOf = r => (Array.isArray(r?.roadbook_files) && r.roadbook_files.length)
+  ? r.roadbook_files
+  : (r?.roadbook_pdf_url ? [{ id: 'roadbook', label: 'Roadbook', url: r.roadbook_pdf_url }] : [])
+
 export default function EventPage() {
   const { rallyId } = useParams()
   const [rally, setRally] = useState(null)
@@ -51,7 +56,7 @@ export default function EventPage() {
     if (!rally) return
     const urls = []
     const push = arr => (arr || []).forEach(m => urls.push(typeof m === 'string' ? m : m?.url))
-    push(rally.stage_maps); push(rally.rally_schedule_files)
+    push(rally.stage_maps); push(rally.rally_schedule_files); push(roadbooksOf(rally))
     urls.push(rally.route_overview_url, rally.roadbook_pdf_url, rally.regulations_pdf_url, rally.final_instructions_pdf_url, rally.logo_url)
     Object.values(rally.stage_images || {}).forEach(v => push(v))
     prefetchFiles(urls)
@@ -392,9 +397,10 @@ export default function EventPage() {
               Download full regulations PDF
             </a>
           )}
-          {rally.roadbook_pdf_url && (
+          {roadbooksOf(rally).map(rb => (
             <a
-              href={rally.roadbook_pdf_url}
+              key={rb.id}
+              href={rb.url}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-2 ml-4 text-xs text-white/35 hover:text-rl-accent transition-colors inline-flex items-center gap-1"
@@ -402,9 +408,9 @@ export default function EventPage() {
               <svg viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
                 <path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 011-1h8zM5 12.25v3.25a.25.25 0 00.4.2l1.45-1.087a.25.25 0 01.3 0L8.6 15.7a.25.25 0 00.4-.2v-3.25a.25.25 0 00-.25-.25h-3.5a.25.25 0 00-.25.25z" />
               </svg>
-              Download roadbook PDF
+              Download {rb.label === 'Roadbook' ? 'roadbook' : `roadbook — ${rb.label}`} PDF
             </a>
-          )}
+          ))}
         </section>
       )}
 

@@ -21,6 +21,11 @@ const SECTIONS = [
   { key: 'rally-guide', label: 'Rally Guide' },
 ]
 
+// Roadbooks: a labelled list (e.g. one per day). Older rallies only have roadbook_pdf_url.
+const roadbooksOf = r => (Array.isArray(r?.roadbook_files) && r.roadbook_files.length)
+  ? r.roadbook_files
+  : (r?.roadbook_pdf_url ? [{ id: 'roadbook', label: 'Roadbook', url: r.roadbook_pdf_url }] : [])
+
 export default function ManageEventPage() {
   const { rallyId } = useParams()
   const { user, isSuperAdmin } = useAuth()
@@ -38,6 +43,7 @@ export default function ManageEventPage() {
   const [fiExtracting, setFiExtracting] = useState(false)
   const [roadbookFile, setRoadbookFile] = useState(null)
   const [roadbookUploading, setRoadbookUploading] = useState(false)
+  const [roadbookLabel, setRoadbookLabel] = useState('')
   const [routeOverviewUploading, setRouteOverviewUploading] = useState(false)
   const [stageMapLabel, setStageMapLabel] = useState('')
   const [stageMapUploading, setStageMapUploading] = useState(false)
@@ -532,6 +538,14 @@ export default function ManageEventPage() {
     }
   }
 
+  // Saves the list and keeps roadbook_pdf_url pointing at the first one for older app versions
+  async function saveRoadbooks(list) {
+    const { error } = await supabase.from('rallies')
+      .update({ roadbook_files: list, roadbook_pdf_url: list[0]?.url ?? null }).eq('id', rallyId)
+    if (error) throw error
+    setRally(r => ({ ...r, roadbook_files: list, roadbook_pdf_url: list[0]?.url ?? null }))
+  }
+
   async function handleRoadbookUpload(e) {
     e.preventDefault()
     if (!roadbookFile) { toast.error('Please select a PDF'); return }
@@ -544,14 +558,26 @@ export default function ManageEventPage() {
       if (uploadErr) throw uploadErr
 
       const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
-      await supabase.from('rallies').update({ roadbook_pdf_url: publicUrl }).eq('id', rallyId)
-      setRally(r => ({ ...r, roadbook_pdf_url: publicUrl }))
+      const current = roadbooksOf(rally)
+      const label = roadbookLabel.trim() || (current.length ? `Roadbook ${current.length + 1}` : 'Roadbook')
+      await saveRoadbooks([...current, { id: crypto.randomUUID(), label, url: publicUrl }])
       setRoadbookFile(null)
+      setRoadbookLabel('')
+      e.target.reset()
       toast.success('Roadbook uploaded!')
     } catch (err) {
       toast.error(err.message || 'Failed to upload roadbook')
     } finally {
       setRoadbookUploading(false)
+    }
+  }
+
+  async function removeRoadbook(id) {
+    if (!confirm('Remove this roadbook?')) return
+    try {
+      await saveRoadbooks(roadbooksOf(rally).filter(rb => rb.id !== id))
+    } catch (err) {
+      toast.error(err.message || 'Could not remove it')
     }
   }
 
@@ -975,22 +1001,33 @@ export default function ManageEventPage() {
         </form>
       </div>
 
-      {/* Roadbook card */}
+      {/* Roadbook card — one or more labelled PDFs (e.g. Day 1, Day 2) */}
       <div className="bg-rl-card border border-white/10 rounded-xl p-5 mb-5">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-white font-medium text-sm">Roadbook</h2>
-            <p className="text-white/35 text-xs mt-0.5">Upload the roadbook PDF — it will appear on the event page and in Rally Logistics.</p>
-          </div>
-          {rally.roadbook_pdf_url && (
-            <a href={rally.roadbook_pdf_url} target="_blank" rel="noopener noreferrer"
-              className="text-xs text-rl-accent hover:text-white transition-colors flex-shrink-0">
-              View PDF ↗
-            </a>
-          )}
+        <div className="mb-3">
+          <h2 className="text-white font-medium text-sm">Roadbooks</h2>
+          <p className="text-white/35 text-xs mt-0.5">Upload the roadbook PDF — or one per day — and it will appear on the event page and in Rally Logistics.</p>
         </div>
 
+        {roadbooksOf(rally).length > 0 && (
+          <div className="space-y-2 mb-4">
+            {roadbooksOf(rally).map(rb => (
+              <div key={rb.id} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5">
+                <span className="text-white text-sm flex-1 truncate">{rb.label}</span>
+                <a href={rb.url} target="_blank" rel="noopener noreferrer" className="text-xs text-rl-accent hover:text-white transition-colors flex-shrink-0">View PDF ↗</a>
+                <button type="button" onClick={() => removeRoadbook(rb.id)} className="text-xs text-red-400/70 hover:text-red-400 flex-shrink-0">Remove</button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <form onSubmit={handleRoadbookUpload} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <input
+            type="text"
+            value={roadbookLabel}
+            onChange={e => setRoadbookLabel(e.target.value)}
+            placeholder="Label — e.g. Day 1 (Friday)"
+            className="rl-input sm:w-48"
+          />
           <input
             type="file"
             accept=".pdf"
@@ -1003,7 +1040,7 @@ export default function ManageEventPage() {
             className="rl-btn-primary text-xs flex-shrink-0 flex items-center justify-center gap-2 disabled:opacity-50 py-2.5"
           >
             {roadbookUploading && <span className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
-            {roadbookUploading ? 'Uploading…' : rally.roadbook_pdf_url ? 'Replace' : 'Upload'}
+            {roadbookUploading ? 'Uploading…' : roadbooksOf(rally).length ? 'Add roadbook' : 'Upload'}
           </button>
         </form>
       </div>
