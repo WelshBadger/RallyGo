@@ -918,7 +918,7 @@ function rowCount(row) {
   return pickNumber(row, ['visitors', 'uniqueVisitors', 'views', 'pageviews', 'count', 'total']) ?? 0
 }
 
-function AnalyticsTab() {
+export function AnalyticsTab() {
   const [app, setApp]         = useState('rallygo')
   const [days, setDays]       = useState(3)
   const [group, setGroup]     = useState('requestPath')

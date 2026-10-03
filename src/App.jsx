@@ -16,6 +16,7 @@ import CreateEventPage from './pages/CreateEventPage'
 import ManageEventPage from './pages/ManageEventPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import AdminPage from './pages/AdminPage'
+import ReportsPage from './pages/ReportsPage'
 import NewsPostPage, { NewsIndexPage } from './pages/NewsPage'
 import NotFoundPage from './pages/NotFoundPage'
 
@@ -141,6 +142,9 @@ export default function App() {
         } />
         <Route path="/admin" element={
           <ProtectedAdmin><AdminPage /></ProtectedAdmin>
+        } />
+        <Route path="/reports" element={
+          <ProtectedAdmin><ReportsPage /></ProtectedAdmin>
         } />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

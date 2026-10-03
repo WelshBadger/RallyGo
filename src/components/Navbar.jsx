@@ -71,6 +71,9 @@ export default function Navbar() {
             {isSuperAdmin && (
               <NavLink to="/admin" active={isActive('/admin')}>Admin</NavLink>
             )}
+            {isSuperAdmin && (
+              <NavLink to="/reports" active={isActive('/reports')}>Reports</NavLink>
+            )}
           </div>
 
           {/* Desktop right */}
@@ -166,6 +169,13 @@ export default function Navbar() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 2a1 1 0 011 1v1.5h2.5a1 1 0 011 1v8a1 1 0 01-1 1H4.5a1 1 0 01-1-1v-8a1 1 0 011-1H7V3a1 1 0 011-1zM6 7h4M6 10h2" />
                   </svg>
                 }>Admin</MobileNavLink>
+              )}
+              {isSuperAdmin && (
+                <MobileNavLink to="/reports" active={isActive('/reports')} onClick={() => setMenuOpen(false)} icon={
+                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2 14h12M4 11V7M8 11V3M12 11V6" />
+                  </svg>
+                }>Reports</MobileNavLink>
               )}
             </div>
 
