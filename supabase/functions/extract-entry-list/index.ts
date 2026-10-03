@@ -71,22 +71,41 @@ async function fetchAraEntries(url: string): Promise<Record<string, string>[] | 
     || season.find((e: any) => String(e.title || '').toLowerCase().includes(q))
   if (!event) throw new Error(`No rally matching "${q}" on the entry list site`)
 
+  // Running order, as the site shows it: the official start order once published
+  // (first day), otherwise seeded by ARA speed factor (alt factor when there's none).
+  // The car number is the running position; the ARA door number is kept as `door`.
   const title = String(event.title)
-  const entries = allEntries
-    .filter((e: any) => e.rally === title || String(e.rally || '').startsWith(`${title} - `))
-    .map((e: any) => ({
-      car: String(e.number ?? ''),
-      driver: [e.driverF, e.driverL].filter(Boolean).join(' ').trim(),
-      codriver: [e.codriverF, e.codriverL].filter(Boolean).join(' ').trim(),
-      class: String(e.carClass ?? ''),
-      vehicle: String(e.car ?? '').trim(),
-      club: String(e.driver?.tn ?? '').trim(),
-      nationality: '',
-    }))
-    .filter((e: Record<string, string>) => e.car || e.driver)
+  const mine = allEntries.filter((e: any) => e.rally === title || String(e.rally || '').startsWith(`${title} - `))
+  if (mine.length === 0) throw new Error(`No entries listed yet for ${title}`)
 
-  if (entries.length === 0) throw new Error(`No entries listed yet for ${title}`)
-  return sortByCarNumber(entries)
+  let startOrder: Map<number, number> | null = null
+  try {
+    const orders = await get(`${event.season}/startOrders.json`)
+    const day = Array.isArray(orders) ? orders.find((o: any) => o.slug === event.name) : null
+    if (day?.entries?.length) startOrder = new Map(day.entries.map((x: any) => [Number(x.uid), Number(x.order)]))
+  } catch { /* no start order published yet */ }
+
+  const speed = (e: any) => Number(e.driver?.sf) || Number(e.driver?.sfAlt) || 0
+  const ranked = [...mine].sort((a: any, b: any) => {
+    if (!!a.waitlist !== !!b.waitlist) return a.waitlist ? 1 : -1
+    if (startOrder) {
+      const oa = startOrder.get(Number(a.driverUID)) ?? Infinity
+      const ob = startOrder.get(Number(b.driverUID)) ?? Infinity
+      if (oa !== ob) return oa - ob
+    }
+    return speed(b) - speed(a) || (a.regOrder ?? 0) - (b.regOrder ?? 0)
+  })
+
+  return ranked.map((e: any, i: number) => ({
+    car: String(i + 1),
+    door: String(e.number ?? ''),
+    driver: [e.driverF, e.driverL].filter(Boolean).join(' ').trim(),
+    codriver: [e.codriverF, e.codriverL].filter(Boolean).join(' ').trim(),
+    class: String(e.carClass ?? ''),
+    vehicle: String(e.car ?? '').trim(),
+    club: String(e.driver?.tn ?? '').trim(),
+    nationality: '',
+  }))
 }
 
 Deno.serve(async (req) => {
