@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { formatDistanceToNow } from '../lib/dateUtils'
 import BackButton from '../components/BackButton'
 import RouteMap from '../components/RouteMap'
+import { stageMapFor } from '../lib/stageMaps'
 
 const SECTION_META = {
   'documents':  { label: 'Documents',               color: '#6366f1' },
@@ -475,10 +476,10 @@ export default function SectionPage() {
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {rally.regulations_data.stages.map((stage) => {
-                  const mapDoc = docs.find(d => d.stage_number === stage.number)
+                  const mapDoc = stageMapFor(stage, rally, docs)
                   const Wrapper = mapDoc ? 'a' : 'div'
                   const wrapperProps = mapDoc
-                    ? { href: mapDoc.file_url || mapDoc.link_url, target: '_blank', rel: 'noopener noreferrer' }
+                    ? { href: mapDoc.url, target: '_blank', rel: 'noopener noreferrer' }
                     : {}
                   return (
                     <Wrapper
@@ -508,7 +509,7 @@ export default function SectionPage() {
                         {mapDoc ? (
                           <span className="text-rl-accent text-[10px]">View map</span>
                         ) : (
-                          <span className="text-white/20 text-[10px]">Map pending</span>
+                          <span className="text-white/20 text-[10px]">No map yet</span>
                         )}
                       </div>
                     </Wrapper>

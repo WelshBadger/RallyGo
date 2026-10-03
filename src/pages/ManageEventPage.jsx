@@ -47,6 +47,7 @@ export default function ManageEventPage() {
   const [roadbookLabel, setRoadbookLabel] = useState('')
   const [routeOverviewUploading, setRouteOverviewUploading] = useState(false)
   const [stageMapLabel, setStageMapLabel] = useState('')
+  const [stageMapStage, setStageMapStage] = useState('')
   const [stageMapUploading, setStageMapUploading] = useState(false)
   const [schedLabel, setSchedLabel] = useState('')
   const [schedUploading, setSchedUploading] = useState(false)
@@ -609,7 +610,8 @@ export default function ManageEventPage() {
     setRally(r => ({ ...r, route_overview_url: null }))
   }
 
-  // Labelled stage-map list: each item is { id, label, url, type: 'image' | 'pdf' }.
+  // Labelled stage-map list: each item is { id, label, url, type: 'image' | 'pdf', stage? }.
+  // `stage` (an SS number) makes that stage's tile on the rally page open the map.
   async function handleStageMapUpload(e) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -623,11 +625,14 @@ export default function ManageEventPage() {
       const { error: uploadErr } = await supabase.storage.from('rally-docs').upload(path, file, { contentType: file.type, upsert: true })
       if (uploadErr) throw uploadErr
       const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
-      const item = { id: Date.now(), label: stageMapLabel.trim() || file.name.replace(/\.[^.]+$/, ''), url: publicUrl, type: isPdf ? 'pdf' : 'image' }
+      const stageNo = stageMapStage || null
+      const fallback = stageNo ? `SS${stageNo} map` : file.name.replace(/\.[^.]+$/, '')
+      const item = { id: Date.now(), label: stageMapLabel.trim() || fallback, url: publicUrl, type: isPdf ? 'pdf' : 'image', stage: stageNo }
       const next = [...(rally.stage_maps || []), item]
       await supabase.from('rallies').update({ stage_maps: next }).eq('id', rallyId)
       setRally(r => ({ ...r, stage_maps: next }))
       setStageMapLabel('')
+      setStageMapStage('')
       toast.success('Added')
     } catch (err) {
       toast.error(err.message || 'Upload failed')
@@ -635,6 +640,13 @@ export default function ManageEventPage() {
       setStageMapUploading(false)
       e.target.value = ''
     }
+  }
+
+  async function setStageMapStageFor(id, stageNo) {
+    const next = (rally.stage_maps || []).map(m => m.id === id ? { ...m, stage: stageNo || null } : m)
+    const { error } = await supabase.from('rallies').update({ stage_maps: next }).eq('id', rallyId)
+    if (error) return toast.error('Could not save that')
+    setRally(r => ({ ...r, stage_maps: next }))
   }
 
   async function removeStageMap(id) {
@@ -1071,6 +1083,19 @@ export default function ManageEventPage() {
                   <p className="text-white text-sm font-medium truncate">{m.label}</p>
                   <p className="text-white/35 text-xs uppercase">{m.type}</p>
                 </div>
+                {rally.regulations_data?.stages?.length > 0 && (
+                  <select
+                    value={m.stage ?? ''}
+                    onChange={e => setStageMapStageFor(m.id, e.target.value)}
+                    aria-label="Stage this map belongs to"
+                    className="rl-input text-xs py-1.5 w-28 flex-shrink-0"
+                  >
+                    <option value="">No stage</option>
+                    {rally.regulations_data.stages.map(st => (
+                      <option key={st.number} value={String(st.number)}>SS{st.number}</option>
+                    ))}
+                  </select>
+                )}
                 <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-xs text-rl-accent hover:text-white flex-shrink-0">View</a>
                 <button onClick={() => removeStageMap(m.id)} className="text-xs text-red-400/60 hover:text-red-400 flex-shrink-0">Remove</button>
               </div>
@@ -1080,6 +1105,19 @@ export default function ManageEventPage() {
 
         {/* Add new: label + file */}
         <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+          {rally.regulations_data?.stages?.length > 0 && (
+            <select
+              value={stageMapStage}
+              onChange={e => setStageMapStage(e.target.value)}
+              aria-label="Stage this map belongs to"
+              className="rl-input text-sm sm:w-40"
+            >
+              <option value="">Not a stage map</option>
+              {rally.regulations_data.stages.map(st => (
+                <option key={st.number} value={String(st.number)}>SS{st.number} {st.name}</option>
+              ))}
+            </select>
+          )}
           <input
             value={stageMapLabel}
             onChange={e => setStageMapLabel(e.target.value)}
@@ -1091,7 +1129,7 @@ export default function ManageEventPage() {
             <input type="file" accept="image/*,application/pdf" onChange={handleStageMapUpload} className="hidden" disabled={stageMapUploading} />
           </label>
         </div>
-        <p className="text-white/25 text-[11px] mt-2">Tip: type a label first, then choose the file. Labels default to the file name.</p>
+        <p className="text-white/25 text-[11px] mt-2">Tip: pick the stage (if it's a stage map) and type a label first, then choose the file. A stage map opens from that stage's tile on the rally page.</p>
       </div>
 
       <RouteFileCard rally={rally} setRally={setRally} />
