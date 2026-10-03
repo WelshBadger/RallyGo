@@ -193,6 +193,7 @@ export default function RallySelectPage() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [customPacks, setCustomPacks] = useState([])
+  const [myPacks, setMyPacks] = useState([]) // my packs for calendar / RallyHQ rallies
   const [sharedPacks, setSharedPacks] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -221,6 +222,7 @@ export default function RallySelectPage() {
       calendar.then(ev => {
         setEvents((!ev.error && ev.data) ? ev.data : [])
         setCustomPacks([])
+        setMyPacks([])
         setSharedPacks([])
         setLoading(false)
       })
@@ -236,18 +238,27 @@ export default function RallySelectPage() {
       supabase.from('pack_members')
         .select('role, logistics_packs(id, rally_id, calendar_event_id, custom_name, custom_date, car_number)')
         .eq('user_id', user.id),
-    ]).then(([ev, cp, sp]) => {
+      supabase.from('logistics_packs')
+        .select('id, rally_id, calendar_event_id')
+        .eq('user_id', user.id)
+        .is('custom_name', null),
+    ]).then(([ev, cp, sp, mine]) => {
       const evData = (!ev.error && ev.data) ? ev.data : []
       setEvents(evData)
       if (!cp.error && cp.data) setCustomPacks(cp.data)
+      if (!mine.error && mine.data) setMyPacks(mine.data)
       if (!sp.error && sp.data) {
         const nameFor = (pk) => pk.custom_name
           || (pk.rally_id && evData.find(e => e.rally_id === pk.rally_id)?.name)
           || (pk.calendar_event_id && evData.find(e => e.id === pk.calendar_event_id)?.name)
           || 'Rally'
+        const eventFor = (pk) => (pk.rally_id && evData.find(e => e.rally_id === pk.rally_id))
+          || (pk.calendar_event_id && evData.find(e => e.id === pk.calendar_event_id)) || null
         setSharedPacks(sp.data.filter(m => m.logistics_packs).map(m => ({
           id: m.logistics_packs.id, role: m.role, car_number: m.logistics_packs.car_number,
-          date: m.logistics_packs.custom_date, name: nameFor(m.logistics_packs),
+          date: m.logistics_packs.custom_date || eventFor(m.logistics_packs)?.date || null,
+          end_date: eventFor(m.logistics_packs)?.end_date || null,
+          name: nameFor(m.logistics_packs),
         })))
       }
       setLoading(false)
@@ -287,6 +298,21 @@ export default function RallySelectPage() {
   }, [events, search])
 
   const next = events.find(e => (e.end_date || e.date) >= today)
+
+  // The rally to pin at the top: the soonest current/upcoming one I have a pack for
+  // (my own, a crew's pack shared with me, or my own rally); otherwise the next on the calendar.
+  const pinned = useMemo(() => {
+    const myRallyIds = new Set(myPacks.map(p => p.rally_id).filter(Boolean))
+    const myCalIds = new Set(myPacks.map(p => p.calendar_event_id).filter(Boolean))
+    const mine = [
+      ...events.filter(e => myRallyIds.has(e.rally_id) || myCalIds.has(e.id))
+        .map(e => ({ name: e.name, date: e.date, end: e.end_date, location: e.location, to: e.rally_id ? `/pack/${e.rally_id}` : `/pack/cal/${e.id}` })),
+      ...sharedPacks.filter(p => p.date).map(p => ({ name: p.name, date: p.date, end: p.end_date, to: `/pack/team/${p.id}`, shared: true })),
+      ...customPacks.filter(p => p.custom_date).map(p => ({ name: p.custom_name, date: p.custom_date, end: p.custom_end_date, location: p.custom_location, to: `/pack/custom/${p.id}` })),
+    ].filter(r => (r.end || r.date) >= today).sort((a, b) => a.date.localeCompare(b.date))
+    if (mine.length) return { ...mine[0], yours: true }
+    return next ? { name: next.name, date: next.date, end: next.end_date, location: next.location, to: next.rally_id ? `/pack/${next.rally_id}` : `/pack/cal/${next.id}` } : null
+  }, [events, myPacks, sharedPacks, customPacks, next, today])
   const monthFirst = toISO(new Date(calYear, calMonth, 1))
   const monthLast = toISO(new Date(calYear, calMonth + 1, 0))
   const monthEvents = events.filter(e => e.date <= monthLast && (e.end_date || e.date) >= monthFirst)
@@ -302,6 +328,28 @@ export default function RallySelectPage() {
 
   return (
     <main className="max-w-lg mx-auto px-4 py-6">
+      {pinned && (() => {
+        const now = pinned.date <= today
+        const days = daysUntil(pinned.date)
+        return (
+          <Link to={pinned.to} className="block mb-5 rounded-2xl border border-rl-accent/40 bg-rl-accent/10 px-5 py-4 no-underline hover:border-rl-accent/70 transition-all">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-rl-accent mb-1">
+              {now ? 'Happening now' : pinned.yours ? `Your next rally${days ? ` · ${days}` : ''}` : `Next rally on the calendar${days ? ` · ${days}` : ''}`}
+            </p>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-white font-semibold text-lg leading-tight truncate">{pinned.name}</h2>
+                <p className="text-white/45 text-xs mt-1 truncate">
+                  {fmt(pinned.date)}{pinned.end && pinned.end !== pinned.date ? ` – ${fmt(pinned.end)}` : ''}
+                  {pinned.location ? ` · ${pinned.location}` : ''}
+                </p>
+              </div>
+              <span className="rl-btn-primary text-xs flex-shrink-0">Open</span>
+            </div>
+          </Link>
+        )
+      })()}
+
       <div className="flex items-start justify-between gap-3 mb-1">
         <h1 className="text-white font-semibold text-lg">Choose your rally</h1>
         {user ? (

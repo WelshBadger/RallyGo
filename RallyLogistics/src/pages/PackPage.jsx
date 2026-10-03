@@ -5,6 +5,9 @@ import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import WeatherPanel from '../components/WeatherPanel'
 import RouteMap from '../components/RouteMap'
+import { PacenotesTab, StagePacenotes, RecceVideos } from '../components/RecceMedia'
+import { reencodeImage } from '../lib/images'
+import { stageMapFor } from '../lib/stageMaps'
 
 // Route map files: a labelled list (e.g. one KMZ per day). Older rallies only have route_kmz_url.
 const routeFilesOf = r => (Array.isArray(r?.route_kmz_files) && r.route_kmz_files.length)
@@ -15,32 +18,6 @@ const routeFilesOf = r => (Array.isArray(r?.route_kmz_files) && r.route_kmz_file
 const roadbooksOf = r => (Array.isArray(r?.roadbook_files) && r.roadbook_files.length)
   ? r.roadbook_files
   : (r?.roadbook_pdf_url ? [{ id: 'roadbook', label: 'Roadbook', url: r.roadbook_pdf_url }] : [])
-
-// Re-encode any image (incl. iOS HEIC) to a right-sized JPEG so photo-library
-// uploads don't fail on format/size. Falls back to the original if decode fails.
-function reencodeImage(file, maxDim = 2400, quality = 0.85) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file)
-    const img = new Image()
-    img.onload = () => {
-      let { width, height } = img
-      if (Math.max(width, height) > maxDim) {
-        const s = maxDim / Math.max(width, height)
-        width = Math.round(width * s); height = Math.round(height * s)
-      }
-      const canvas = document.createElement('canvas')
-      canvas.width = width; canvas.height = height
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
-      URL.revokeObjectURL(url)
-      canvas.toBlob(
-        (blob) => blob ? resolve(blob) : reject(new Error('encode failed')),
-        'image/jpeg', quality
-      )
-    }
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode failed')) }
-    img.src = url
-  })
-}
 
 // ── Offline write-queue ──────────────────────────────────────────────────────
 // Edits made with no signal are applied locally, stashed here (survives app close),
@@ -211,6 +188,10 @@ const SECTIONS = [
     icon: <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/></svg>
   },
   {
+    id: 'pacenotes', label: 'Pacenotes', color: '#0ea5e9', desc: 'Back-up pacenotes, page by page',
+    icon: <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
+  },
+  {
     id: 'car-setup', label: 'Car set-up', color: '#a78bfa', desc: 'Setup sheet & changes during rally',
     icon: <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7"><path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/></svg>
   },
@@ -291,6 +272,7 @@ export default function PackPage() {
     urls.push(rally?.route_overview_url, rally?.roadbook_pdf_url, rally?.regulations_pdf_url, rally?.final_instructions_url, rally?.logo_url)
     Object.values(rally?.stage_images || {}).forEach(v => push(v))
     push(pack?.stage_maps); push(pack?.rally_schedule_files); push(pack?.setup_sheet_urls)
+    Object.values(pack?.pacenotes || {}).forEach(pages => push(pages))
     urls.push(pack?.rally_schedule_image_url)
     rallyDocs.forEach(d => urls.push(d.file_url || d.url))
     prefetchFiles(urls)
@@ -815,7 +797,8 @@ export default function PackPage() {
           {tab === 'team-map'      && <TeamMapTab pack={pack} me={user} rally={rally} share={share} />}
           {tab === 'route-map'     && <RouteMap rally={rally} />}
           {tab === 'fuel'          && <FuelTab pack={pack} onSave={save} />}
-          {tab === 'recce'         && <RecceTab pack={pack} stages={stages} rally={rally} onSave={save} />}
+          {tab === 'recce'         && <RecceTab pack={pack} stages={stages} rally={rally} onSave={save} canEdit={canEdit} />}
+          {tab === 'pacenotes'     && <PacenotesTab pack={pack} stages={stages} canEdit={canEdit} onSave={save} />}
           {tab === 'car-setup'     && <CarSetupTab pack={pack} rally={rally} onSave={save} />}
           {tab === 'weather'       && <WeatherPanel rally={rally} />}
           {tab === 'media'         && <MediaTab rally={rally} pack={pack} onSave={save} canEdit={canEdit} canManageTeam={canManageTeam} />}
@@ -3018,9 +3001,28 @@ function FuelCard({ label, data, onChange, onDelete, fixed }) {
 
 // ─── Recce Tab ───────────────────────────────────────────────────────────────
 
-function RecceTab({ pack, stages, rally, onSave }) {
+function RecceTab({ pack, stages, rally, onSave, canEdit }) {
   const [notes, setNotes] = useState(pack?.recce_notes || {})
   const [dirty, setDirty] = useState(false)
+  const [sheet, setSheet] = useState(null) // { kind: 'video' | 'pacenotes', key, title }
+  const [lightbox, setLightbox] = useState(null)
+
+  // The stage's map from anywhere in the app: the organiser's stage maps, then the
+  // crew's own uploads tagged to the stage, then images attached to the stage.
+  function mapFor(s) {
+    const org = stageMapFor(s, rally)
+    if (org) return org
+    const crew = (pack?.stage_maps || []).find(m => m.stage != null && String(m.stage) === String(s.number))
+    if (crew) return { url: crew.url, type: crew.type }
+    const imgs = rally?.stage_images?.[s.number] || rally?.stage_images?.[String(s.number)] || []
+    const first = imgs[0]
+    return first ? { url: typeof first === 'string' ? first : first.url, type: 'image' } : null
+  }
+
+  function openMap(m) {
+    if (m.type === 'pdf' || /\.pdf($|\?)/i.test(m.url)) openFile(m.url)
+    else setLightbox(m.url)
+  }
   const recce = rally?.regulations_data?.recce
   const reconDate = rally?.regulations_data?.reconDate
 
@@ -3105,6 +3107,30 @@ function RecceTab({ pack, stages, rally, onSave }) {
                   {s.distance && <p className="text-white/30 text-xs">{s.distance}</p>}
                 </div>
               </div>
+              {(() => {
+                const key = String(s.number)
+                const title = `SS${s.number}${s.name && s.name !== `SS${s.number}` ? ` ${s.name}` : ''}`
+                const map = mapFor(s)
+                const vids = (pack?.recce_videos?.[key] || []).length
+                const pages = (pack?.pacenotes?.[key] || []).length
+                const btn = 'flex-1 rounded-lg border px-2 py-2 text-xs font-medium text-center transition-all'
+                return (
+                  <div className="flex gap-2 mb-2">
+                    <button onClick={() => map && openMap(map)} disabled={!map}
+                      className={`${btn} ${map ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700' : 'border-white/10 text-white/30'}`}>
+                      {map ? 'Stage map' : 'No map yet'}
+                    </button>
+                    <button onClick={() => setSheet({ kind: 'video', key, title })}
+                      className={`${btn} border-purple-500/35 bg-purple-500/10 text-purple-700`}>
+                      Recce video{vids ? ` (${vids})` : ''}
+                    </button>
+                    <button onClick={() => setSheet({ kind: 'pacenotes', key, title })}
+                      className={`${btn} border-sky-500/40 bg-sky-500/10 text-sky-700`}>
+                      Pacenotes{pages ? ` (${pages})` : ''}
+                    </button>
+                  </div>
+                )
+              })()}
               <textarea value={notes[s.number] || ''} onChange={e => update(s.number, e.target.value)}
                 placeholder="Hazards, cuts, surface changes, notes for pacenotes…"
                 rows={3} className="rl-textarea text-xs" />
@@ -3112,6 +3138,14 @@ function RecceTab({ pack, stages, rally, onSave }) {
           ))}
         </div>
       )}
+
+      {sheet?.kind === 'video' && (
+        <RecceVideos pack={pack} stageKey={sheet.key} title={sheet.title} canEdit={canEdit} onSave={onSave} onClose={() => setSheet(null)} />
+      )}
+      {sheet?.kind === 'pacenotes' && (
+        <StagePacenotes pack={pack} stageKey={sheet.key} title={sheet.title} canEdit={canEdit} onSave={onSave} onClose={() => setSheet(null)} />
+      )}
+      {lightbox && <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />}
     </div>
   )
 }

@@ -35,6 +35,7 @@ export const LOGISTICS_TILES = [
   { key: 'route-map', label: 'Route map' },
   { key: 'fuel', label: 'Fuel' },
   { key: 'recce', label: 'Recce' },
+  { key: 'pacenotes', label: 'Pacenotes' },
   { key: 'car-setup', label: 'Car set-up' },
   { key: 'weather', label: 'Weather' },
   { key: 'tracking', label: 'Live Tracking' },
