@@ -200,8 +200,8 @@ serve(async (req) => {
       body: msgBody,
       rallyId,
       url: deepLinkUrl,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      icon: '/icons/app-icon-192.png',
+      badge: '/icons/badge-96.png',
     })
 
     const results = await Promise.allSettled(

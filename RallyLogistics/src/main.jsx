@@ -5,6 +5,9 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthContext'
 import App from './App'
 import './index.css'
+import { trackSafeTop } from './lib/safeTop'
+
+trackSafeTop()
 
 // Register service worker for offline caching, with self-healing auto-update:
 // when a new version is deployed, activate it and reload once so users never

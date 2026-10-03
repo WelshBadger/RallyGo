@@ -128,8 +128,8 @@ self.addEventListener('push', event => {
   const title = data.title || 'RallyHQ'
   const options = {
     body: data.body || 'New update',
-    icon: data.icon || '/icons/icon-192.png',
-    badge: data.badge || '/icons/icon-192.png',
+    icon: data.icon || '/icons/app-icon-192.png',
+    badge: data.badge || '/icons/badge-96.png',
     data: { url: data.url || '/' },
     tag: data.rallyId ? `rally-${data.rallyId}` : 'rallygo',
     renotify: true,

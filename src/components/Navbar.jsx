@@ -46,7 +46,7 @@ export default function Navbar() {
   return (
     <>
       {/* paddingTop keeps the bar below the phone's status bar / notch (installed app) */}
-      <nav style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }} className={`sticky top-0 z-50 transition-all duration-300 ${
+      <nav style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }} className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
           ? 'bg-white/95 backdrop-blur-md shadow-[0_1px_0_0_rgba(255,255,255,0.06)]'
           : 'bg-white'

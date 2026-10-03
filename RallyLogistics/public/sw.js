@@ -134,8 +134,8 @@ self.addEventListener('push', event => {
   const title = data.title || 'Rally Logistics'
   const options = {
     body: data.body || 'New message',
-    icon: data.icon || '/icons/icon-192.png',
-    badge: data.badge || '/icons/icon-192.png',
+    icon: data.icon || '/icons/app-icon-192.png',
+    badge: data.badge || '/icons/badge-96.png',
     data: { url: data.url || '/' },
     tag: data.rallyId ? `rl-${data.rallyId}` : 'rally-logistics',
     renotify: true,

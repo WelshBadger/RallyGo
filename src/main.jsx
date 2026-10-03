@@ -5,6 +5,9 @@ import { Toaster } from 'react-hot-toast'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import './index.css'
+import { trackSafeTop } from './lib/safeTop'
+
+trackSafeTop()
 
 // Register service worker for offline caching
 if ('serviceWorker' in navigator) {

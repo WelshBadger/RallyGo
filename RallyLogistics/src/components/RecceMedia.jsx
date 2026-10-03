@@ -48,7 +48,7 @@ function Sheet({ title, sub, backLabel = 'Back', onClose, children }) {
   useNoBodyScroll()
   return createPortal(
     <div className="fixed inset-0 z-[70] bg-rl-bg overflow-y-auto overscroll-contain">
-      <div className="sticky top-0 z-10 bg-rl-bg border-b border-white/10" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <div className="sticky top-0 z-10 bg-rl-bg border-b border-white/10" style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}>
         <div className="max-w-3xl mx-auto px-3 py-2.5">
           <button onClick={onClose}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-rl-card border border-white/15 text-left active:scale-[0.99]">
@@ -106,7 +106,7 @@ function ReaderBody({ title, pages, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <div className="fixed inset-0 z-[80] bg-black flex flex-col" style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}>
       <div className="flex items-center justify-between gap-2 px-3 py-2 bg-black/90" style={{ color: '#fff' }}>
         <p className="text-sm font-semibold truncate" style={{ color: '#fff' }}>{title}</p>
         <div className="flex items-center gap-1.5 flex-shrink-0">
