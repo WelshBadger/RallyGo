@@ -1,0 +1,42 @@
+// Parts of a rally's info page that the organiser can switch off (rallies.hidden_sections)
+export const RALLY_INFO_SECTIONS = [
+  { key: 'glance', label: 'Event at a glance' },
+  { key: 'logistics', label: 'Team Logistics link' },
+  { key: 'weather', label: 'Weather' },
+  { key: 'rally-schedule', label: 'Rally schedule' },
+  { key: 'documents', label: 'Documents' },
+  { key: 'pre-event', label: 'Pre-event info' },
+  { key: 'route', label: 'Event schedule' },
+  { key: 'bulletins', label: 'Live bulletins' },
+  { key: 'recce', label: 'Recce' },
+  { key: 'team', label: 'Organising team' },
+  { key: 'accommodation', label: 'Accommodation' },
+  { key: 'results', label: 'Live results' },
+  { key: 'entry-list', label: 'Entry list' },
+  { key: 'rally-guide', label: 'Rally Guide' },
+  { key: 'latest-bulletins', label: 'Latest bulletins feed' },
+]
+
+// Rally Logistics tiles the organiser can switch off for every crew on the rally
+// (rallies.hidden_logistics_tiles). Ids match SECTIONS in RallyLogistics PackPage.
+export const LOGISTICS_TILES = [
+  { key: 'team-chat', label: 'Team Chat' },
+  { key: 'results', label: 'Results' },
+  { key: 'entry-list', label: 'Entry List' },
+  { key: 'team', label: 'Team' },
+  { key: 'schedule', label: 'Event Schedule' },
+  { key: 'rally-schedule', label: 'Rally Schedule' },
+  { key: 'documents', label: 'Documents' },
+  { key: 'stages', label: 'Stages' },
+  { key: 'pre-event', label: 'Pre-event' },
+  { key: 'locations', label: 'Locations' },
+  { key: 'team-map', label: 'Live team map' },
+  { key: 'fuel', label: 'Fuel' },
+  { key: 'recce', label: 'Recce' },
+  { key: 'car-setup', label: 'Car set-up' },
+  { key: 'weather', label: 'Weather' },
+  { key: 'tracking', label: 'Live Tracking' },
+  { key: 'videos', label: 'Live Videos' },
+  { key: 'media', label: 'Media & Socials' },
+  { key: 'sportity', label: 'Live Bulletins (Sportity)' },
+]

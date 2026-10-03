@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { rallyId, url } = await req.json()
+    const { rallyId, url, label } = await req.json()
     if (!rallyId || !url) throw new Error('Provide rallyId and url')
 
     const supabase = createClient(
@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser(token)
     if (!user) throw new Error('Please sign in again')
     const [{ data: rally }, { data: profile }] = await Promise.all([
-      supabase.from('rallies').select('organiser_id').eq('id', rallyId).maybeSingle(),
+      supabase.from('rallies').select('organiser_id, route_kmz_url, route_kmz_files').eq('id', rallyId).maybeSingle(),
       supabase.from('user_profiles').select('is_super_admin').eq('id', user.id).maybeSingle(),
     ])
     if (!rally) throw new Error('Rally not found')
@@ -73,10 +73,17 @@ Deno.serve(async (req) => {
     if (upErr) throw upErr
     const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
 
-    const { error } = await supabase.from('rallies').update({ route_kmz_url: publicUrl }).eq('id', rallyId)
+    // Add to the rally's list (one file per day is common); route_kmz_url mirrors the first
+    const current = Array.isArray(rally.route_kmz_files) && rally.route_kmz_files.length
+      ? rally.route_kmz_files
+      : (rally.route_kmz_url ? [{ id: 'route', label: 'Route', url: rally.route_kmz_url }] : [])
+    const name = String(label || '').trim() || (current.length ? `Route ${current.length + 1}` : 'Route')
+    const files = [...current, { id: crypto.randomUUID(), label: name, url: publicUrl }]
+    const { error } = await supabase.from('rallies')
+      .update({ route_kmz_files: files, route_kmz_url: files[0].url }).eq('id', rallyId)
     if (error) throw error
 
-    return new Response(JSON.stringify({ url: publicUrl, type: ext, bytes: bytes.length }), {
+    return new Response(JSON.stringify({ url: publicUrl, type: ext, bytes: bytes.length, files }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {

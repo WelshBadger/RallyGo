@@ -2,12 +2,29 @@ import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 
-// Organiser's KMZ / KML route file: import from a link (copied to our storage by
-// the import-route-file function) or upload the file. Rally Logistics draws it on
-// the live team map.
+// Route map files: a labelled list (e.g. one KMZ per day). Older rallies only have route_kmz_url.
+const routeFilesOf = r => (Array.isArray(r?.route_kmz_files) && r.route_kmz_files.length)
+  ? r.route_kmz_files
+  : (r?.route_kmz_url ? [{ id: 'route', label: 'Route', url: r.route_kmz_url }] : [])
+
+// Organiser's KMZ / KML route files: import from a link (copied to our storage by
+// the import-route-file function) or upload. Rally Logistics draws them on the
+// live team map.
 export default function RouteFileCard({ rally, setRally }) {
   const [link, setLink] = useState('')
+  const [label, setLabel] = useState('')
   const [busy, setBusy] = useState(false)
+  const files = routeFilesOf(rally)
+
+  const nextLabel = () => label.trim() || (files.length ? `Route ${files.length + 1}` : 'Route')
+
+  // Keeps route_kmz_url pointing at the first file for older app versions
+  async function saveFiles(list) {
+    const { error } = await supabase.from('rallies')
+      .update({ route_kmz_files: list, route_kmz_url: list[0]?.url ?? null }).eq('id', rally.id)
+    if (error) throw error
+    setRally(r => ({ ...r, route_kmz_files: list, route_kmz_url: list[0]?.url ?? null }))
+  }
 
   async function importLink(e) {
     e.preventDefault()
@@ -22,12 +39,13 @@ export default function RouteFileCard({ rally, setRally }) {
           'Authorization': `Bearer ${session.access_token}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
-        body: JSON.stringify({ rallyId: rally.id, url: link.trim() }),
+        body: JSON.stringify({ rallyId: rally.id, url: link.trim(), label: nextLabel() }),
       })
       const result = await res.json()
       if (!res.ok) throw new Error(result.error || 'Import failed')
-      setRally(r => ({ ...r, route_kmz_url: result.url }))
+      setRally(r => ({ ...r, route_kmz_files: result.files, route_kmz_url: result.files[0]?.url ?? null }))
       setLink('')
+      setLabel('')
       toast.success('Route map imported')
     } catch (err) {
       toast.error(err.message || 'Import failed')
@@ -49,9 +67,8 @@ export default function RouteFileCard({ rally, setRally }) {
       const { error: upErr } = await supabase.storage.from('rally-docs').upload(path, file, { contentType, upsert: true })
       if (upErr) throw upErr
       const { data: { publicUrl } } = supabase.storage.from('rally-docs').getPublicUrl(path)
-      const { error } = await supabase.from('rallies').update({ route_kmz_url: publicUrl }).eq('id', rally.id)
-      if (error) throw error
-      setRally(r => ({ ...r, route_kmz_url: publicUrl }))
+      await saveFiles([...files, { id: crypto.randomUUID(), label: nextLabel(), url: publicUrl }])
+      setLabel('')
       toast.success('Route map uploaded')
     } catch (err) {
       toast.error(err.message || 'Upload failed')
@@ -60,31 +77,43 @@ export default function RouteFileCard({ rally, setRally }) {
     }
   }
 
-  async function remove() {
-    if (!confirm('Remove the route map file?')) return
-    const { error } = await supabase.from('rallies').update({ route_kmz_url: null }).eq('id', rally.id)
-    if (error) return toast.error('Could not remove it')
-    setRally(r => ({ ...r, route_kmz_url: null }))
+  async function remove(id) {
+    if (!confirm('Remove this route map file?')) return
+    try {
+      await saveFiles(files.filter(f => f.id !== id))
+    } catch {
+      toast.error('Could not remove it')
+    }
   }
-
-  const fileName = rally.route_kmz_url ? rally.route_kmz_url.split('/').pop() : ''
 
   return (
     <div className="bg-rl-card border border-white/10 rounded-xl p-5 mb-5">
-      <h2 className="text-white font-medium text-sm">Route map file (KMZ / KML)</h2>
+      <h2 className="text-white font-medium text-sm">Route map files (KMZ / KML)</h2>
       <p className="text-white/35 text-xs mt-0.5 mb-4">
-        Paste a link to the rally's KMZ or KML file (Google My Maps links work too), or upload the file.
+        Add the rally's KMZ or KML file — or one per day. Paste a link (Google My Maps links work too) or upload the file.
         Crews see the stages and route on the live team map in Rally Logistics, including offline.
       </p>
 
-      {rally.route_kmz_url && (
-        <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 mb-4">
-          <span className="text-[10px] font-semibold text-green-600 bg-green-500/10 border border-green-500/25 px-2 py-0.5 rounded-full flex-shrink-0">Added</span>
-          <a href={rally.route_kmz_url} className="text-white/60 text-xs truncate flex-1 no-underline hover:text-white" download>{fileName}</a>
-          <button type="button" onClick={remove} className="text-xs text-red-400/70 hover:text-red-400 flex-shrink-0">Remove</button>
+      {files.length > 0 && (
+        <div className="space-y-2 mb-4">
+          {files.map(f => (
+            <div key={f.id} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5">
+              <span className="text-white text-sm flex-1 truncate">{f.label}</span>
+              <a href={f.url} className="text-xs text-rl-accent hover:text-white transition-colors flex-shrink-0 no-underline" download>Download</a>
+              <button type="button" onClick={() => remove(f.id)} className="text-xs text-red-400/70 hover:text-red-400 flex-shrink-0">Remove</button>
+            </div>
+          ))}
         </div>
       )}
 
+      <input
+        type="text"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        placeholder="Label — e.g. Day 1 (Friday)"
+        className="rl-input mb-2"
+        disabled={busy}
+      />
       <form onSubmit={importLink} className="flex flex-wrap gap-2">
         <input
           type="url"
@@ -95,7 +124,7 @@ export default function RouteFileCard({ rally, setRally }) {
           disabled={busy}
         />
         <button type="submit" disabled={busy || !link.trim()} className="rl-btn-primary text-xs px-4">
-          {busy ? 'Working…' : rally.route_kmz_url ? 'Replace from link' : 'Import link'}
+          {busy ? 'Working…' : 'Import link'}
         </button>
       </form>
 

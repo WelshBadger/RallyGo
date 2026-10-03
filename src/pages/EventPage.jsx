@@ -190,6 +190,8 @@ export default function EventPage() {
   )
 
   const isPast = new Date(rally.end_date || rally.date) < new Date()
+  const hidden = Array.isArray(rally.hidden_sections) ? rally.hidden_sections : []
+  const shows = key => !hidden.includes(key)
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-0">
@@ -253,8 +255,8 @@ export default function EventPage() {
           </div>
         )}
 
-        {/* Rally Logistics deep-link — visible to everyone */}
-        <div className="flex items-center justify-between py-3 border-t border-white/8">
+        {/* Rally Logistics deep-link */}
+        {shows('logistics') && <div className="flex items-center justify-between py-3 border-t border-white/8">
           <div>
             <span className="text-white/60 text-xs font-medium block">Team Logistics</span>
             <span className="text-white/30 text-[10px]">Fuel, recce, schedule & team chat</span>
@@ -267,7 +269,7 @@ export default function EventPage() {
           >
             Open →
           </a>
-        </div>
+        </div>}
 
         {/* Subtle granted indicator in header */}
         {notifStatus === 'granted' && (
@@ -343,7 +345,7 @@ export default function EventPage() {
       )}
 
       {/* Regulations at a glance */}
-      {rally.regulations_data && (
+      {shows('glance') && rally.regulations_data && (
         <section className="mb-6">
           <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium mb-3">Event at a glance</p>
           <div className="bg-rl-card border border-white/10 rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-5">
@@ -415,10 +417,10 @@ export default function EventPage() {
       )}
 
       {/* Weather */}
-      <WeatherPanel rally={rally} />
+      {shows('weather') && <WeatherPanel rally={rally} />}
 
       {/* Rally schedule */}
-      {Array.isArray(rally.rally_schedule_files) && rally.rally_schedule_files.length > 0 && (
+      {shows('rally-schedule') && Array.isArray(rally.rally_schedule_files) && rally.rally_schedule_files.length > 0 && (
         <section className="mb-6 bg-white rounded-2xl border border-black/10 p-5">
           <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium mb-3">Rally schedule</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -456,11 +458,11 @@ export default function EventPage() {
       {/* Section tiles */}
       <section className="mb-6">
         <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium mb-3">Event sections</p>
-        <TileGrid rallyId={rallyId} newCounts={newCounts} sportityUrl={rally?.sportity_url} />
+        <TileGrid rallyId={rallyId} newCounts={newCounts} sportityUrl={rally?.sportity_url} hidden={hidden} />
       </section>
 
       {/* Latest bulletins */}
-      <section className="mb-8">
+      {shows('latest-bulletins') && <section className="mb-8">
         <div className="flex items-center justify-between mb-3">
           <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium">Latest bulletins</p>
           <Link to={`/event/${rallyId}/bulletins`} className="text-white/40 hover:text-white text-xs transition-colors no-underline">
@@ -468,7 +470,7 @@ export default function EventPage() {
           </Link>
         </div>
         <BulletinFeed rallyId={rallyId} limit={3} />
-      </section>
+      </section>}
     </main>
   )
 }

@@ -233,7 +233,10 @@ export default function SharedPackPage() {
       {/* Tile grid — home dashboard */}
       {!tab && (
         <div className="grid grid-cols-2 gap-3">
-          {SECTIONS.map(s => (
+          {SECTIONS.filter(s => ![
+            ...(Array.isArray(rally?.hidden_logistics_tiles) ? rally.hidden_logistics_tiles : []),
+            ...(Array.isArray(pack?.hidden_tiles) ? pack.hidden_tiles : []),
+          ].includes(s.id)).map(s => (
             <button
               key={s.id}
               onClick={() => setTab(s.id)}

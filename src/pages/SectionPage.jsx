@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatDistanceToNow } from '../lib/dateUtils'
 import BackButton from '../components/BackButton'
@@ -64,6 +64,10 @@ export default function SectionPage() {
 
     return () => supabase.removeChannel(channel)
   }, [rallyId, section])
+
+  if (rally && Array.isArray(rally.hidden_sections) && rally.hidden_sections.includes(section)) {
+    return <Navigate to={`/event/${rallyId}`} replace />
+  }
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-5 sm:py-6">

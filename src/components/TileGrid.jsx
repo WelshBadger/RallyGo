@@ -113,10 +113,10 @@ const SECTIONS = [
   },
 ]
 
-export default function TileGrid({ rallyId, newCounts = {}, sportityUrl }) {
+export default function TileGrid({ rallyId, newCounts = {}, sportityUrl, hidden = [] }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-      {SECTIONS.map((section) => {
+      {SECTIONS.filter(section => !hidden.includes(section.key)).map((section) => {
         const hasNew = (newCounts[section.key] || 0) > 0
         const isExternalBulletins = section.key === 'bulletins' && sportityUrl
         const Comp = isExternalBulletins ? 'a' : Link

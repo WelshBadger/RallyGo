@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import AccessCodeCard from '../components/AccessCodeCard'
 import RouteFileCard from '../components/RouteFileCard'
+import SectionVisibilityCard from '../components/SectionVisibilityCard'
 import toast from 'react-hot-toast'
 import BackButton from '../components/BackButton'
 import { formatDistanceToNow } from '../lib/dateUtils'
@@ -695,6 +696,8 @@ export default function ManageEventPage() {
       </div>
 
       <AccessCodeCard rallyId={rallyId} />
+
+      <SectionVisibilityCard rally={rally} setRally={setRally} />
 
       {/* Surface type */}
       <div className="bg-rl-card border border-white/10 rounded-xl p-4 mb-5">

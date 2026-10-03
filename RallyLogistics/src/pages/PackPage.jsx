@@ -5,6 +5,11 @@ import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import WeatherPanel from '../components/WeatherPanel'
 
+// Route map files: a labelled list (e.g. one KMZ per day). Older rallies only have route_kmz_url.
+const routeFilesOf = r => (Array.isArray(r?.route_kmz_files) && r.route_kmz_files.length)
+  ? r.route_kmz_files
+  : (r?.route_kmz_url ? [{ id: 'route', label: 'Route', url: r.route_kmz_url }] : [])
+
 // Roadbooks: a labelled list (e.g. one per day). Older rallies only have roadbook_pdf_url.
 const roadbooksOf = r => (Array.isArray(r?.roadbook_files) && r.roadbook_files.length)
   ? r.roadbook_files
@@ -257,6 +262,9 @@ export default function PackPage() {
   const [myRole, setMyRole] = useState('owner') // owner | admin | editor | viewer
   const canEdit = myRole === 'owner' || myRole === 'admin' || myRole === 'editor'
   const canManageTeam = myRole === 'owner' || myRole === 'admin'
+  // Tiles switched off by the organiser (for every crew) or by this pack's admin
+  const organiserHidden = Array.isArray(rally?.hidden_logistics_tiles) ? rally.hidden_logistics_tiles : []
+  const hiddenTiles = [...organiserHidden, ...(Array.isArray(pack?.hidden_tiles) ? pack.hidden_tiles : [])]
   const [tab, setTab] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -273,8 +281,8 @@ export default function PackPage() {
     if (!rally && !pack) return
     const urls = []
     const push = arr => (arr || []).forEach(m => urls.push(typeof m === 'string' ? m : m?.url))
-    push(rally?.stage_maps); push(rally?.rally_schedule_files); push(roadbooksOf(rally))
-    urls.push(rally?.route_kmz_url, rally?.route_overview_url, rally?.roadbook_pdf_url, rally?.regulations_pdf_url, rally?.final_instructions_url, rally?.logo_url)
+    push(rally?.stage_maps); push(rally?.rally_schedule_files); push(roadbooksOf(rally)); push(routeFilesOf(rally))
+    urls.push(rally?.route_overview_url, rally?.roadbook_pdf_url, rally?.regulations_pdf_url, rally?.final_instructions_url, rally?.logo_url)
     Object.values(rally?.stage_images || {}).forEach(v => push(v))
     push(pack?.stage_maps); push(pack?.rally_schedule_files); push(pack?.setup_sheet_urls)
     urls.push(pack?.rally_schedule_image_url)
@@ -709,9 +717,11 @@ export default function PackPage() {
       )}
 
       {/* Tile grid — home dashboard */}
+      {!tab && canManageTeam && <TileChooser rally={rally} pack={pack} onSave={save} />}
       {!tab && (
         <div className="grid grid-cols-2 gap-3">
           {SECTIONS.filter(s => {
+            if (hiddenTiles.includes(s.id)) return false
             if ((isCal || isCustom || isMember) && s.id === 'team-chat') return false
             if (s.external) return !!rally?.[s.external]  // link-out tiles only show when the organiser set the link
             return true
@@ -738,7 +748,7 @@ export default function PackPage() {
               )}
             </button>
           ))}
-          {rally.sportity_url && (
+          {rally.sportity_url && !hiddenTiles.includes('sportity') && (
             <a
               href={rally.sportity_url}
               target="_blank"
@@ -2031,6 +2041,54 @@ function PlanNextUp({ pack, onOpen }) {
   )
 }
 
+// ─── Choose which tiles this pack shows (pack owner / admins) ───────────────
+function TileChooser({ rally, pack, onSave }) {
+  const [open, setOpen] = useState(false)
+  const organiserHidden = Array.isArray(rally?.hidden_logistics_tiles) ? rally.hidden_logistics_tiles : []
+  const packHidden = Array.isArray(pack?.hidden_tiles) ? pack.hidden_tiles : []
+  const items = [...SECTIONS.map(s => ({ id: s.id, label: s.label })), ...(rally?.sportity_url ? [{ id: 'sportity', label: 'Live Bulletins' }] : [])]
+
+  function toggle(id, show) {
+    const next = show ? packHidden.filter(k => k !== id) : [...new Set([...packHidden, id])]
+    onSave({ hidden_tiles: next })
+  }
+
+  return (
+    <div className="mb-3 flex justify-end">
+      {!open ? (
+        <button onClick={() => setOpen(true)} className="text-xs text-white/45 hover:text-white transition-colors">
+          Choose tiles{packHidden.length ? ` · ${packHidden.length} hidden` : ''}
+        </button>
+      ) : (
+        <div className="w-full bg-rl-card border border-white/10 rounded-xl p-4">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <p className="text-white text-sm font-medium">Tiles in this pack</p>
+              <p className="text-white/35 text-[11px] mt-0.5">Untick tiles your crew doesn't need. Applies to everyone with access to this pack.</p>
+            </div>
+            <button onClick={() => setOpen(false)} className="text-xs text-rl-accent flex-shrink-0">Done</button>
+          </div>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+            {items.map(item => {
+              const byOrganiser = organiserHidden.includes(item.id)
+              const shown = !byOrganiser && !packHidden.includes(item.id)
+              return (
+                <label key={item.id} className={`flex items-center gap-2 py-1.5 select-none ${byOrganiser ? 'opacity-50' : 'cursor-pointer'}`}>
+                  <input type="checkbox" checked={shown} disabled={byOrganiser}
+                    onChange={e => toggle(item.id, e.target.checked)} className="w-4 h-4 accent-rl-accent flex-shrink-0" />
+                  <span className="text-white/80 text-sm leading-tight">
+                    {item.label}{byOrganiser && <span className="block text-white/35 text-[10px]">Not used on this rally</span>}
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Live team map ───────────────────────────────────────────────────────────
 // Positions are written by whoever has the pack open and sharing. The table and
 // the upsert shape are deliberately source-agnostic, so a Capacitor background
@@ -2174,22 +2232,23 @@ function TeamMapTab({ pack, me, rally }) {
   })
   const [geoError, setGeoError] = useState(null)
   const [fitted, setFitted] = useState(false)
-  const routeUrl = rally?.route_kmz_url || null
+  const routeFiles = routeFilesOf(rally)
+  const routeKey = routeFiles.map(f => f.url).join('|')
   const routeLayer = useRef(null)
-  const [route, setRoute] = useState(null) // features once loaded
-  const [routeError, setRouteError] = useState(null)
-  const [showRoute, setShowRoute] = useState(true)
+  const [routes, setRoutes] = useState({}) // url → { features } | { error }
+  const [hiddenRoutes, setHiddenRoutes] = useState([]) // urls switched off on this screen
 
-  // Organiser's route file (served from our storage, so the offline cache has it)
+  // Organiser's route files (served from our storage, so the offline cache has them)
   useEffect(() => {
-    if (!routeUrl) { setRoute(null); return }
     let live = true
-    setRouteError(null)
-    loadRouteFeatures(routeUrl)
-      .then(f => { if (live) setRoute(f) })
-      .catch(err => { if (live) setRouteError(err.message || 'Could not show the route map') })
+    setRoutes({})
+    routeFiles.forEach(f => {
+      loadRouteFeatures(f.url)
+        .then(features => { if (live) setRoutes(r => ({ ...r, [f.url]: { features } })) })
+        .catch(err => { if (live) setRoutes(r => ({ ...r, [f.url]: { error: err.message || 'Could not show this file' } })) })
+    })
     return () => { live = false }
-  }, [routeUrl])
+  }, [routeKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Who's who
   useEffect(() => {
@@ -2288,7 +2347,8 @@ function TeamMapTab({ pack, me, rally }) {
     if (!map || !window.L) return
     const L = window.L
     if (routeLayer.current) { map.removeLayer(routeLayer.current); routeLayer.current = null }
-    if (!route?.length || !showRoute) return
+    const route = routeFiles.filter(f => !hiddenRoutes.includes(f.url)).flatMap(f => routes[f.url]?.features || [])
+    if (!route.length) return
     const group = L.featureGroup()
     route.forEach(f => {
       const colour = f.colour || '#E24B4A'
@@ -2301,7 +2361,7 @@ function TeamMapTab({ pack, me, rally }) {
     group.addTo(map)
     routeLayer.current = group
     if (!fitted && !positions.length) map.fitBounds(group.getBounds().pad(0.1), { maxZoom: 14 })
-  }, [route, showRoute, leafletReady]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [routes, hiddenRoutes, leafletReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep markers in step with the positions
   useEffect(() => {
@@ -2393,17 +2453,26 @@ function TeamMapTab({ pack, me, rally }) {
         {positions.length > 0 && <button onClick={recentre} className="rl-btn-ghost text-xs">Fit everyone</button>}
       </div>
 
-      {routeUrl && (
-        <div className="flex items-center justify-between gap-3 bg-rl-card border border-white/10 rounded-xl px-4 py-2.5">
-          <div className="min-w-0">
-            <p className="text-white text-sm">Rally route</p>
-            <p className="text-white/35 text-[11px]">
-              {routeError ? routeError : route ? `${route.filter(f => f.type === 'line').length} lines · ${route.filter(f => f.type === 'point').length} points from the organiser` : 'Loading the route…'}
-            </p>
+      {routeFiles.map(file => {
+        const r = routes[file.url]
+        const features = r?.features || []
+        return (
+          <div key={file.url} className="flex items-center justify-between gap-3 bg-rl-card border border-white/10 rounded-xl px-4 py-2.5">
+            <div className="min-w-0">
+              <p className="text-white text-sm truncate">{file.label === 'Route' ? 'Rally route' : `Route — ${file.label}`}</p>
+              <p className="text-white/35 text-[11px]">
+                {r?.error ? r.error : r ? `${features.filter(f => f.type === 'line').length} lines · ${features.filter(f => f.type === 'point').length} points from the organiser` : 'Loading the route…'}
+              </p>
+            </div>
+            {features.length > 0 && (
+              <Toggle
+                checked={!hiddenRoutes.includes(file.url)}
+                onChange={on => setHiddenRoutes(h => on ? h.filter(u => u !== file.url) : [...h, file.url])}
+              />
+            )}
           </div>
-          {route?.length > 0 && <Toggle checked={showRoute} onChange={setShowRoute} />}
-        </div>
-      )}
+        )
+      })}
 
       {positions.length > 0 && (
         <div className="space-y-2">
