@@ -125,10 +125,20 @@ export default function RouteMap({ rally }) {
     if (!ready || !mapEl.current || mapRef.current) return
     const L = window.L
     const map = L.map(mapEl.current).setView([54.5, -3], 6)
-    L.tileLayer('https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-    }).addTo(map)
+    // Free, keyless base maps (CARTO's tiles now need a paid key). Topo shows forest tracks.
+    const baseMaps = {
+      'Street map': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
+      }),
+      'Topo map': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        maxZoom: 17,
+        subdomains: 'abc',
+        attribution: '&copy; OpenStreetMap contributors, SRTM | &copy; OpenTopoMap (CC-BY-SA)',
+      }),
+    }
+    baseMaps['Street map'].addTo(map)
+    L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map)
     mapRef.current = map
     setTimeout(() => map.invalidateSize(), 60)
     return () => { map.remove(); mapRef.current = null }

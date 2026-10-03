@@ -45,9 +45,9 @@ self.addEventListener('fetch', event => {
   const isSupabase = url.hostname.includes('supabase.co')
   // Map tiles for the Locations thumbnails — cache-first like files, so the little
   // maps still draw with no signal once they've been seen online.
-  const isMapTile = url.hostname.endsWith('basemaps.cartocdn.com') || url.hostname.endsWith('tile.openstreetmap.org')
-  // Leaflet (live team map) is loaded from a CDN — cache it like a file so the map still opens offline
-  const isMapLib = url.hostname === 'cdnjs.cloudflare.com' && url.pathname.includes('/leaflet/')
+  const isMapTile = url.hostname.endsWith('tile.openstreetmap.org') || url.hostname.endsWith('tile.opentopomap.org')
+  // Leaflet (maps) and JSZip (KMZ route files) load from a CDN — cache them like files so maps still open offline
+  const isMapLib = url.hostname === 'cdnjs.cloudflare.com' && (url.pathname.includes('/leaflet/') || url.pathname.includes('/jszip/'))
 
   // ── Supabase Storage FILES (images / PDFs) ── Cache-first (immutable, timestamped
   //    filenames), so once seen with signal they open offline forever. Opaque (no-cors

@@ -2340,10 +2340,20 @@ function TeamMapTab({ pack, me, rally }) {
     if (!leafletReady || !mapEl.current || mapRef.current) return
     const L = window.L
     const map = L.map(mapEl.current, { zoomControl: true, attributionControl: true }).setView([54.5, -3], 6)
-    L.tileLayer('https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-    }).addTo(map)
+    // Free, keyless base maps (CARTO's tiles now need a paid key). Topo shows forest tracks.
+    const baseMaps = {
+      'Street map': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
+      }),
+      'Topo map': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        maxZoom: 17,
+        subdomains: 'abc',
+        attribution: '&copy; OpenStreetMap contributors, SRTM | &copy; OpenTopoMap (CC-BY-SA)',
+      }),
+    }
+    baseMaps['Street map'].addTo(map)
+    L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map)
     mapRef.current = map
     setTimeout(() => map.invalidateSize(), 60)
   }, [leafletReady])
@@ -3246,7 +3256,7 @@ function RoomingList({ rooms, contacts, onChange }) {
 // ─── Location maps (shared by the pack + shared views) ───────────────────────
 // A tiny slippy-map thumbnail built from plain tile images — no map library, and
 // the tiles land in the service worker's FILE_CACHE so they still draw offline.
-const MAP_TILE = (z, x, y) => `https://a.basemaps.cartocdn.com/light_all/${z}/${x}/${y}.png`
+const MAP_TILE = (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`
 
 function lonLatToTile(lat, lon, z) {
   const n = 2 ** z
@@ -3293,7 +3303,7 @@ function MiniMap({ lat, lon, zoom = 15, halfW = 220, halfH = 70, className = '',
           <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
         </svg>
       )}
-      <span className="absolute bottom-0 right-0 px-1 text-[8px] leading-[10px] text-black/45 bg-white/65 rounded-tl">© OSM · CARTO</span>
+      <span className="absolute bottom-0 right-0 px-1 text-[8px] leading-[10px] text-black/45 bg-white/65 rounded-tl">© OpenStreetMap</span>
     </div>
   )
 }
