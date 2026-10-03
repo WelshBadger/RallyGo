@@ -7,9 +7,7 @@ export default function Navbar() {
     <nav style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }} className="border-b border-white/8 bg-rl-bg/95 backdrop-blur sticky top-0 z-50">
       <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 no-underline">
-          <div className="w-7 h-7 rounded-lg bg-rl-accent flex items-center justify-center relative overflow-hidden">
-            <span className="text-white font-black text-xs tracking-tight">RL</span>
-          </div>
+          <img src="/icons/logo-circle.png" alt="" width="28" height="28" className="w-7 h-7 flex-shrink-0" />
           <div>
             <span className="font-semibold text-sm leading-none" style={{ color: '#fff' }}>Rally Logistics</span>
             <p className="text-white/30 text-[10px] leading-none mt-0.5">by RallyHQ</p>

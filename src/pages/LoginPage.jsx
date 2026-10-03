@@ -32,7 +32,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 mb-8 no-underline">
-          <span className="w-2 h-2 rounded-full bg-rl-accent" />
+          <img src="/icons/logo-circle.png" alt="" width="28" height="28" className="w-7 h-7" />
           <span className="text-white font-medium">RallyHQ</span>
         </Link>
 

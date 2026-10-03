@@ -6,11 +6,7 @@ import toast from 'react-hot-toast'
 function Logo() {
   return (
     <Link to="/" className="flex items-center gap-2.5 no-underline group">
-      {/* Mark: stacked chevrons suggesting speed/stages */}
-      <svg width="22" height="20" viewBox="0 0 22 20" fill="none" className="flex-shrink-0">
-        <path d="M2 10 L8 3 L14 10 L8 17 Z" fill="#E24B4A" opacity="0.9" />
-        <path d="M8 10 L14 3 L20 10 L14 17 Z" fill="#E24B4A" opacity="0.45" />
-      </svg>
+      <img src="/icons/logo-circle.png" alt="" width="28" height="28" className="w-7 h-7 flex-shrink-0" />
       <span className="text-white font-semibold text-base tracking-tight">
         Rally<span className="text-rl-accent">HQ</span>
       </span>

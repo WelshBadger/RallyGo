@@ -66,22 +66,12 @@ function SplashScreen({ onDone }) {
       }}
     >
       {/* Logo mark */}
-      <div style={{
-        width: 64, height: 64,
-        background: 'linear-gradient(135deg, #e63946, #c1121f)',
-        borderRadius: 16,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: 18,
-        boxShadow: '0 0 40px rgba(230,57,70,0.35)',
-      }}>
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-        </svg>
-      </div>
+      <img src="/icons/logo-circle.png" alt="" width="72" height="72"
+        style={{ width: 72, height: 72, marginBottom: 18, boxShadow: '0 0 40px rgba(255,150,65,0.30)', borderRadius: '50%' }} />
 
       {/* Wordmark */}
       <div style={{ fontSize: 30, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px', marginBottom: 8 }}>
-        Rally<span style={{ color: '#e63946' }}>HQ</span>
+        Rally<span style={{ color: '#FF9641' }}>HQ</span>
       </div>
 
       {/* Tagline */}
@@ -93,7 +83,7 @@ function SplashScreen({ onDone }) {
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
         height: 3,
-        background: 'linear-gradient(to right, transparent, #e63946, transparent)',
+        background: 'linear-gradient(to right, transparent, #FF9641, transparent)',
         animation: 'splash-bar 1.6s ease-in-out forwards',
       }} />
 

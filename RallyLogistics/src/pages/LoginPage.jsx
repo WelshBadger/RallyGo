@@ -44,10 +44,7 @@ export default function LoginPage() {
     <main className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-rl-card border border-white/10 flex items-center justify-center mx-auto mb-4 relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-[3px] bg-rl-accent" />
-            <span className="text-white font-black text-lg tracking-tight">RL</span>
-          </div>
+          <img src="/icons/logo-circle.png" alt="" width="56" height="56" className="w-14 h-14 mx-auto mb-4" />
           <h1 className="text-xl font-semibold text-white mb-1">
             {mode === 'signup' ? 'Create your account' : 'Sign in'}
           </h1>
