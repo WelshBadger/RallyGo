@@ -25,10 +25,24 @@ export function forgetCode(rallyId) {
   writeAll(map)
 }
 
+// A random id for this device, so organisers can see how many devices opened their rally
+function deviceId() {
+  try {
+    let id = localStorage.getItem('rallyhq:device')
+    if (!id) {
+      id = crypto.randomUUID()
+      localStorage.setItem('rallyhq:device', id)
+    }
+    return id
+  } catch {
+    return null
+  }
+}
+
 // true / false from the server, or null when it couldn't be reached (offline)
 export async function checkRallyCode(rallyId, code) {
   try {
-    const { data, error } = await supabase.rpc('check_rally_code', { p_rally_id: rallyId, p_code: code })
+    const { data, error } = await supabase.rpc('check_rally_code', { p_rally_id: rallyId, p_code: code, p_device: deviceId() })
     if (error) return null
     return data === true
   } catch {

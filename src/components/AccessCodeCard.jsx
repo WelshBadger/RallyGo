@@ -15,6 +15,17 @@ export default function AccessCodeCard({ rallyId }) {
   const [draft, setDraft] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [usage, setUsage] = useState(null) // { devices, recent }
+
+  // How many devices have opened this rally with the code
+  useEffect(() => {
+    supabase.from('rally_unlocks').select('last_at').eq('rally_id', rallyId)
+      .then(({ data }) => {
+        if (!data) return
+        const dayAgo = Date.now() - 24 * 3600 * 1000
+        setUsage({ devices: data.length, recent: data.filter(u => new Date(u.last_at).getTime() > dayAgo).length })
+      })
+  }, [rallyId])
 
   useEffect(() => {
     supabase.from('rally_access_codes').select('code').eq('rally_id', rallyId).maybeSingle()
@@ -85,6 +96,13 @@ export default function AccessCodeCard({ rallyId }) {
           )}
           <button type="button" onClick={regenerate} disabled={saving} className="rl-btn-ghost text-xs px-4">New code</button>
         </div>
+      )}
+      {usage && (
+        <p className="text-white/40 text-xs mt-3">
+          {usage.devices === 0
+            ? 'No competitors have opened this rally yet.'
+            : `Opened on ${usage.devices} ${usage.devices === 1 ? 'device' : 'devices'} · ${usage.recent} in the last 24 hours`}
+        </p>
       )}
     </div>
   )
