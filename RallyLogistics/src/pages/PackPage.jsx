@@ -269,7 +269,7 @@ export default function PackPage() {
     const urls = []
     const push = arr => (arr || []).forEach(m => urls.push(typeof m === 'string' ? m : m?.url))
     push(rally?.stage_maps); push(rally?.rally_schedule_files)
-    urls.push(rally?.route_overview_url, rally?.roadbook_pdf_url, rally?.regulations_pdf_url, rally?.final_instructions_url, rally?.logo_url)
+    urls.push(rally?.route_kmz_url, rally?.route_overview_url, rally?.roadbook_pdf_url, rally?.regulations_pdf_url, rally?.final_instructions_url, rally?.logo_url)
     Object.values(rally?.stage_images || {}).forEach(v => push(v))
     push(pack?.stage_maps); push(pack?.rally_schedule_files); push(pack?.setup_sheet_urls)
     urls.push(pack?.rally_schedule_image_url)
@@ -784,7 +784,7 @@ export default function PackPage() {
           {tab === 'stages'        && <StagesTab pack={pack} stages={stages} rally={rally} onSave={save} />}
           {tab === 'pre-event'     && <PreEventTab fi={fi} rally={rally} />}
           {tab === 'locations'     && <LocationsTab pack={pack} fi={fi} rally={rally} onSave={save} />}
-          {tab === 'team-map'      && <TeamMapTab pack={pack} me={user} />}
+          {tab === 'team-map'      && <TeamMapTab pack={pack} me={user} rally={rally} />}
           {tab === 'fuel'          && <FuelTab pack={pack} onSave={save} />}
           {tab === 'recce'         && <RecceTab pack={pack} stages={stages} rally={rally} onSave={save} />}
           {tab === 'car-setup'     && <CarSetupTab pack={pack} rally={rally} onSave={save} />}
@@ -2059,6 +2059,82 @@ function useLeaflet() {
   return ready
 }
 
+// ── Organiser's KMZ / KML route file → simple line / point features ──────────
+let jszipPromise = null
+function loadJSZip() {
+  if (window.JSZip) return Promise.resolve(window.JSZip)
+  if (!jszipPromise) {
+    jszipPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script')
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+      s.onload = () => resolve(window.JSZip)
+      s.onerror = () => { jszipPromise = null; reject(new Error('Could not load the map file reader')) }
+      document.head.appendChild(s)
+    })
+  }
+  return jszipPromise
+}
+
+// KML colours are aabbggrr
+function kmlColour(v) {
+  const h = (v || '').trim()
+  return /^[0-9a-f]{8}$/i.test(h) ? `#${h.slice(6, 8)}${h.slice(4, 6)}${h.slice(2, 4)}` : null
+}
+
+function parseKml(text) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml')
+  const byTag = (el, tag) => [...el.getElementsByTagName(tag)]
+  const colours = {}
+  byTag(doc, 'Style').forEach(st => {
+    const line = st.getElementsByTagName('LineStyle')[0]?.getElementsByTagName('color')[0]?.textContent
+    const icon = st.getElementsByTagName('IconStyle')[0]?.getElementsByTagName('color')[0]?.textContent
+    const col = kmlColour(line) || kmlColour(icon)
+    if (st.getAttribute('id') && col) colours['#' + st.getAttribute('id')] = col
+  })
+  byTag(doc, 'StyleMap').forEach(sm => {
+    const normal = byTag(sm, 'Pair').find(pr => pr.getElementsByTagName('key')[0]?.textContent === 'normal')
+    const url = normal?.getElementsByTagName('styleUrl')[0]?.textContent?.trim()
+    if (sm.getAttribute('id') && url && colours[url]) colours['#' + sm.getAttribute('id')] = colours[url]
+  })
+  const coordsOf = el => (el.getElementsByTagName('coordinates')[0]?.textContent || '')
+    .trim().split(/\s+/).map(t => t.split(',').map(Number)).filter(p => p.length >= 2 && !isNaN(p[0]) && !isNaN(p[1]))
+    .map(([lon, lat]) => [lat, lon])
+
+  const features = []
+  byTag(doc, 'Placemark').forEach(pm => {
+    const name = pm.getElementsByTagName('name')[0]?.textContent?.trim() || ''
+    const styleUrl = pm.getElementsByTagName('styleUrl')[0]?.textContent?.trim()
+    const inline = pm.getElementsByTagName('LineStyle')[0]?.getElementsByTagName('color')[0]?.textContent
+    const colour = kmlColour(inline) || colours[styleUrl] || null
+    byTag(pm, 'LineString').forEach(ls => { const pts = coordsOf(ls); if (pts.length > 1) features.push({ type: 'line', name, colour, pts }) })
+    byTag(pm, 'LinearRing').forEach(lr => { const pts = coordsOf(lr); if (pts.length > 1) features.push({ type: 'line', name, colour, pts }) })
+    byTag(pm, 'Point').forEach(pt => { const pts = coordsOf(pt); if (pts.length) features.push({ type: 'point', name, colour, pts }) })
+  })
+  return features
+}
+
+async function loadRouteFeatures(url) {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Could not download the route map')
+  const buf = await res.arrayBuffer()
+  const head = new Uint8Array(buf, 0, 2)
+  let text
+  if (head[0] === 0x50 && head[1] === 0x4b) {
+    const JSZip = await loadJSZip()
+    const zip = await JSZip.loadAsync(buf)
+    const kml = Object.values(zip.files).find(f => !f.dir && /\.kml$/i.test(f.name))
+    if (!kml) throw new Error('No map found inside the KMZ file')
+    text = await kml.async('text')
+  } else {
+    text = new TextDecoder().decode(buf)
+  }
+  return parseKml(text)
+}
+
+function escapeHtml(v) {
+  return String(v).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]))
+}
+
 function initials(name) {
   return (name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }
@@ -2077,7 +2153,7 @@ function ago(ts) {
   return `${Math.floor(h / 24)}d ago`
 }
 
-function TeamMapTab({ pack, me }) {
+function TeamMapTab({ pack, me, rally }) {
   const packId = pack?.id
   const leafletReady = useLeaflet()
   const mapEl = useRef(null)
@@ -2093,6 +2169,22 @@ function TeamMapTab({ pack, me }) {
   })
   const [geoError, setGeoError] = useState(null)
   const [fitted, setFitted] = useState(false)
+  const routeUrl = rally?.route_kmz_url || null
+  const routeLayer = useRef(null)
+  const [route, setRoute] = useState(null) // features once loaded
+  const [routeError, setRouteError] = useState(null)
+  const [showRoute, setShowRoute] = useState(true)
+
+  // Organiser's route file (served from our storage, so the offline cache has it)
+  useEffect(() => {
+    if (!routeUrl) { setRoute(null); return }
+    let live = true
+    setRouteError(null)
+    loadRouteFeatures(routeUrl)
+      .then(f => { if (live) setRoute(f) })
+      .catch(err => { if (live) setRouteError(err.message || 'Could not show the route map') })
+    return () => { live = false }
+  }, [routeUrl])
 
   // Who's who
   useEffect(() => {
@@ -2185,6 +2277,27 @@ function TeamMapTab({ pack, me }) {
     setTimeout(() => map.invalidateSize(), 60)
   }, [leafletReady])
 
+  // Draw the route under the crew pins
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !window.L) return
+    const L = window.L
+    if (routeLayer.current) { map.removeLayer(routeLayer.current); routeLayer.current = null }
+    if (!route?.length || !showRoute) return
+    const group = L.featureGroup()
+    route.forEach(f => {
+      const colour = f.colour || '#E24B4A'
+      const layer = f.type === 'line'
+        ? L.polyline(f.pts, { color: colour, weight: 4, opacity: 0.85 })
+        : L.circleMarker(f.pts[0], { radius: 5, color: '#fff', weight: 2, fillColor: colour, fillOpacity: 1 })
+      if (f.name) layer.bindPopup(`<strong>${escapeHtml(f.name)}</strong>`)
+      group.addLayer(layer)
+    })
+    group.addTo(map)
+    routeLayer.current = group
+    if (!fitted && !positions.length) map.fitBounds(group.getBounds().pad(0.1), { maxZoom: 14 })
+  }, [route, showRoute, leafletReady]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Keep markers in step with the positions
   useEffect(() => {
     const map = mapRef.current
@@ -2274,6 +2387,18 @@ function TeamMapTab({ pack, me }) {
         </p>
         {positions.length > 0 && <button onClick={recentre} className="rl-btn-ghost text-xs">Fit everyone</button>}
       </div>
+
+      {routeUrl && (
+        <div className="flex items-center justify-between gap-3 bg-rl-card border border-white/10 rounded-xl px-4 py-2.5">
+          <div className="min-w-0">
+            <p className="text-white text-sm">Rally route</p>
+            <p className="text-white/35 text-[11px]">
+              {routeError ? routeError : route ? `${route.filter(f => f.type === 'line').length} lines · ${route.filter(f => f.type === 'point').length} points from the organiser` : 'Loading the route…'}
+            </p>
+          </div>
+          {route?.length > 0 && <Toggle checked={showRoute} onChange={setShowRoute} />}
+        </div>
+      )}
 
       {positions.length > 0 && (
         <div className="space-y-2">

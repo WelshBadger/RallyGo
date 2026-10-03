@@ -3,6 +3,7 @@ import { useParams, Link, Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import AccessCodeCard from '../components/AccessCodeCard'
+import RouteFileCard from '../components/RouteFileCard'
 import toast from 'react-hot-toast'
 import BackButton from '../components/BackButton'
 import { formatDistanceToNow } from '../lib/dateUtils'
@@ -1052,6 +1053,8 @@ export default function ManageEventPage() {
         </div>
         <p className="text-white/25 text-[11px] mt-2">Tip: type a label first, then choose the file. Labels default to the file name.</p>
       </div>
+
+      <RouteFileCard rally={rally} setRally={setRally} />
 
       {/* Rally schedule card — labelled list of images / PDFs */}
       <div className="bg-rl-card border border-white/10 rounded-xl p-5 mb-5">
