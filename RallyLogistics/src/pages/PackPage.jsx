@@ -267,6 +267,7 @@ export default function PackPage() {
   const [myRole, setMyRole] = useState('owner') // owner | admin | editor | viewer
   const canEdit = myRole === 'owner' || myRole === 'admin' || myRole === 'editor'
   const canManageTeam = myRole === 'owner' || myRole === 'admin'
+  const share = useLocationSharing(pack?.id, user?.id)
   // Tiles switched off by the organiser (for every crew) or by this pack's admin
   const organiserHidden = Array.isArray(rally?.hidden_logistics_tiles) ? rally.hidden_logistics_tiles : []
   const hiddenTiles = [...organiserHidden, ...(Array.isArray(pack?.hidden_tiles) ? pack.hidden_tiles : [])]
@@ -722,6 +723,12 @@ export default function PackPage() {
       )}
 
       {/* Tile grid — home dashboard */}
+      {!tab && share.sharing && (
+        <div className="mb-3 flex items-center justify-between gap-3 bg-green-500/10 border border-green-500/25 rounded-xl px-4 py-2.5">
+          <p className="text-green-700 text-xs font-medium">Sharing your location with your crew</p>
+          <button onClick={() => share.toggleShare(false)} className="text-xs text-white/50 hover:text-white flex-shrink-0">Stop</button>
+        </div>
+      )}
       {!tab && canManageTeam && <TileChooser rally={rally} pack={pack} onSave={save} />}
       {!tab && (
         <div className="grid grid-cols-2 gap-3">
@@ -805,7 +812,7 @@ export default function PackPage() {
           {tab === 'stages'        && <StagesTab pack={pack} stages={stages} rally={rally} onSave={save} />}
           {tab === 'pre-event'     && <PreEventTab fi={fi} rally={rally} />}
           {tab === 'locations'     && <LocationsTab pack={pack} fi={fi} rally={rally} onSave={save} />}
-          {tab === 'team-map'      && <TeamMapTab pack={pack} me={user} rally={rally} />}
+          {tab === 'team-map'      && <TeamMapTab pack={pack} me={user} rally={rally} share={share} />}
           {tab === 'route-map'     && <RouteMap rally={rally} />}
           {tab === 'fuel'          && <FuelTab pack={pack} onSave={save} />}
           {tab === 'recce'         && <RecceTab pack={pack} stages={stages} rally={rally} onSave={save} />}
@@ -2223,21 +2230,97 @@ function ago(ts) {
   return `${Math.floor(h / 24)}d ago`
 }
 
-function TeamMapTab({ pack, me, rally }) {
+// Location sharing runs for as long as any page of the pack is open (not just the
+// map), and asks the phone to keep the screen on while sharing, where it allows it.
+function useLocationSharing(packId, meId) {
+  const [sharing, setSharing] = useState(false)
+  const [geoError, setGeoError] = useState(null)
+  const [myPos, setMyPos] = useState(null)
+  const lastSent = useRef(0)
+
+  useEffect(() => {
+    if (!packId) return
+    try { setSharing(localStorage.getItem(SHARE_KEY(packId)) === '1') } catch { /* private mode */ }
+  }, [packId])
+
+  useEffect(() => {
+    if (!sharing || !packId || !meId) return
+    if (!navigator.geolocation) { setGeoError('This device has no location support'); return }
+    setGeoError(null)
+
+    async function push(pos) {
+      const now = Date.now()
+      if (now - lastSent.current < 15000) return
+      lastSent.current = now
+      const c = pos.coords
+      const row = {
+        pack_id: packId,
+        user_id: meId,
+        lat: c.latitude,
+        lon: c.longitude,
+        accuracy: c.accuracy ?? null,
+        heading: Number.isFinite(c.heading) ? c.heading : null,
+        speed: Number.isFinite(c.speed) ? c.speed : null,
+        source: 'web',
+        updated_at: new Date().toISOString(),
+      }
+      setMyPos(row)
+      const { error } = await supabase.from('team_positions').upsert(row, { onConflict: 'pack_id,user_id' })
+      if (error) setGeoError(navigator.onLine ? error.message : 'No signal — your position will send when you have signal again')
+      else setGeoError(null)
+    }
+
+    const watch = navigator.geolocation.watchPosition(
+      push,
+      err => setGeoError(err.code === 1 ? 'Location permission was declined — allow it for this app in your phone settings' : err.message),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+    )
+    return () => navigator.geolocation.clearWatch(watch)
+  }, [sharing, packId, meId])
+
+  // Keep the screen awake while sharing (Android Chrome, recent iPhones); re-acquired
+  // when the app comes back to the front because phones drop it when hidden.
+  useEffect(() => {
+    if (!sharing || !('wakeLock' in navigator)) return
+    let lock = null
+    let done = false
+    const acquire = async () => {
+      try {
+        if (document.visibilityState === 'visible' && !done) lock = await navigator.wakeLock.request('screen')
+      } catch { /* not allowed right now */ }
+    }
+    acquire()
+    document.addEventListener('visibilitychange', acquire)
+    return () => {
+      done = true
+      document.removeEventListener('visibilitychange', acquire)
+      if (lock) lock.release().catch(() => {})
+    }
+  }, [sharing])
+
+  function toggleShare(on) {
+    setSharing(on)
+    try { localStorage.setItem(SHARE_KEY(packId), on ? '1' : '0') } catch { /* private mode */ }
+    if (!on) {
+      setMyPos(null)
+      setGeoError(null)
+      if (packId && meId) supabase.from('team_positions').delete().eq('pack_id', packId).eq('user_id', meId)
+    }
+  }
+
+  return { sharing, toggleShare, geoError, myPos }
+}
+
+function TeamMapTab({ pack, me, rally, share }) {
   const packId = pack?.id
   const leafletReady = useLeaflet()
   const mapEl = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef({})
-  const watchRef = useRef(null)
-  const lastSent = useRef(0)
+  const { sharing, toggleShare, geoError, myPos } = share
 
   const [positions, setPositions] = useState([])
   const [names, setNames] = useState({})
-  const [sharing, setSharing] = useState(() => {
-    try { return localStorage.getItem(SHARE_KEY(packId)) === '1' } catch { return false }
-  })
-  const [geoError, setGeoError] = useState(null)
   const [fitted, setFitted] = useState(false)
   const routeFiles = routeFilesOf(rally)
   const routeKey = routeFiles.map(f => f.url).join('|')
@@ -2288,52 +2371,11 @@ function TeamMapTab({ pack, me, rally }) {
     return () => { live = false; clearInterval(t) }
   }, [packId])
 
-  // Share my own position while the toggle is on and this page is open
+  // Show my own position straight away rather than waiting for the next poll
   useEffect(() => {
-    if (!sharing || !packId || !me?.id) return
-    if (!navigator.geolocation) { setGeoError('This device has no location support'); return }
-    setGeoError(null)
-
-    async function push(pos) {
-      const now = Date.now()
-      if (now - lastSent.current < 15000) return
-      lastSent.current = now
-      const c = pos.coords
-      const row = {
-        pack_id: packId,
-        user_id: me.id,
-        lat: c.latitude,
-        lon: c.longitude,
-        accuracy: c.accuracy ?? null,
-        heading: Number.isFinite(c.heading) ? c.heading : null,
-        speed: Number.isFinite(c.speed) ? c.speed : null,
-        source: 'web',
-        updated_at: new Date().toISOString(),
-      }
-      const { error } = await supabase.from('team_positions').upsert(row, { onConflict: 'pack_id,user_id' })
-      if (error) setGeoError(error.message)
-      else setPositions(p => [...p.filter(x => x.user_id !== me.id), row])
-    }
-
-    watchRef.current = navigator.geolocation.watchPosition(
-      push,
-      err => setGeoError(err.code === 1 ? 'Location permission was declined' : err.message),
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
-    )
-    return () => {
-      if (watchRef.current != null) navigator.geolocation.clearWatch(watchRef.current)
-      watchRef.current = null
-    }
-  }, [sharing, packId, me?.id])
-
-  function toggleShare(on) {
-    setSharing(on)
-    try { localStorage.setItem(SHARE_KEY(packId), on ? '1' : '0') } catch { /* private mode */ }
-    if (!on && packId && me?.id) {
-      supabase.from('team_positions').delete().eq('pack_id', packId).eq('user_id', me.id)
-      setPositions(p => p.filter(x => x.user_id !== me.id))
-    }
-  }
+    if (!me?.id) return
+    setPositions(p => myPos ? [...p.filter(x => x.user_id !== me.id), myPos] : p.filter(x => x.user_id !== me.id || sharing))
+  }, [myPos, sharing, me?.id])
 
   // Build the map once Leaflet is in
   useEffect(() => {
@@ -2439,15 +2481,15 @@ function TeamMapTab({ pack, me, rally }) {
           <div className="min-w-0">
             <p className="text-white font-medium text-sm">Share my location</p>
             <p className="text-white/35 text-[11px] mt-0.5">
-              The crew can see where you are while the pack is open on your phone
+              Your crew sees where you are while Rally Logistics is open on your phone — on any page of this pack
             </p>
           </div>
           <Toggle checked={sharing} onChange={toggleShare} />
         </div>
         {sharing && (
           <p className="text-white/30 text-[11px]">
-            Phones stop reporting when the screen locks or you switch apps — your pin stays put at your last position and
-            greys out after 15 minutes.
+            While sharing, the app keeps your screen on where the phone allows it. Locking the phone or switching to another
+            app stops updates — your pin stays at your last position and greys out after 15 minutes. Positions need signal to send.
           </p>
         )}
         {geoError && <p className="text-amber-500/80 text-[11px]">{geoError}</p>}
