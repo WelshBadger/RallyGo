@@ -3,11 +3,13 @@ import { useParams, Link, Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatDistanceToNow } from '../lib/dateUtils'
 import BackButton from '../components/BackButton'
+import RouteMap from '../components/RouteMap'
 
 const SECTION_META = {
   'documents':  { label: 'Documents',               color: '#6366f1' },
   'pre-event':  { label: 'Pre-event info',          color: '#E24B4A' },
   'route':      { label: 'Event schedule',           color: '#378ADD' },
+  'route-map':  { label: 'Route map',                color: '#22c55e' },
   'bulletins':  { label: 'Live bulletins & documents', color: '#E24B4A' },
   'recce':      { label: 'Recce',                   color: '#10b981' },
   'team':       { label: 'Organising team',          color: '#1D9E75' },
@@ -82,11 +84,18 @@ export default function SectionPage() {
         <h1 className="text-xl font-medium text-white">{meta.label}</h1>
       </div>
 
+      {/* Route map: the organiser's KMZ / KML files */}
+      {!loading && section === 'route-map' && rally && <RouteMap rally={rally} />}
+
       {/* Documents: all uploaded docs + main PDFs */}
       {!loading && section === 'documents' && (() => {
         const mainPdfs = [
           rally?.regulations_pdf_url && { label: 'Supplementary Regulations', sub: 'Full regulations PDF', url: rally.regulations_pdf_url },
           rally?.final_instructions_pdf_url && { label: 'Final Instructions', sub: 'Final instructions PDF', url: rally.final_instructions_pdf_url },
+          ...((Array.isArray(rally?.roadbook_files) && rally.roadbook_files.length)
+            ? rally.roadbook_files
+            : (rally?.roadbook_pdf_url ? [{ label: 'Roadbook', url: rally.roadbook_pdf_url }] : [])
+          ).map(rb => ({ label: rb.label === 'Roadbook' ? 'Roadbook' : `Roadbook — ${rb.label}`, sub: 'Roadbook PDF', url: rb.url })),
         ].filter(Boolean)
 
         const allDocs = docs || []

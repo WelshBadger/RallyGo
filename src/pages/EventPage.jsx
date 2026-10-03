@@ -9,6 +9,7 @@ import BackButton from '../components/BackButton'
 import WeatherPanel from '../components/WeatherPanel'
 import { LOGISTICS_URL } from '../lib/config'
 import { getStoredCode } from '../lib/rallyAccess'
+import { routeFilesOf } from '../components/RouteMap'
 
 // Public VAPID key for push subscriptions
 const VAPID_PUBLIC_KEY = 'BIcwQ-AgPS8rQeybSdJEYAohASdl7C3vx9ls5N5BWx0qC_2Av_gx1k-USjFEeZmjeM-KYGua2tKWqIYNWvPWZc8'
@@ -56,7 +57,7 @@ export default function EventPage() {
     if (!rally) return
     const urls = []
     const push = arr => (arr || []).forEach(m => urls.push(typeof m === 'string' ? m : m?.url))
-    push(rally.stage_maps); push(rally.rally_schedule_files); push(roadbooksOf(rally))
+    push(rally.stage_maps); push(rally.rally_schedule_files); push(roadbooksOf(rally)); push(routeFilesOf(rally))
     urls.push(rally.route_overview_url, rally.roadbook_pdf_url, rally.regulations_pdf_url, rally.final_instructions_pdf_url, rally.logo_url)
     Object.values(rally.stage_images || {}).forEach(v => push(v))
     prefetchFiles(urls)
@@ -458,7 +459,7 @@ export default function EventPage() {
       {/* Section tiles */}
       <section className="mb-6">
         <p className="text-white/30 text-[11px] uppercase tracking-widest font-medium mb-3">Event sections</p>
-        <TileGrid rallyId={rallyId} newCounts={newCounts} sportityUrl={rally?.sportity_url} hidden={hidden} />
+        <TileGrid rallyId={rallyId} newCounts={newCounts} sportityUrl={rally?.sportity_url} hidden={hidden} hasRouteMap={routeFilesOf(rally).length > 0} />
       </section>
 
       {/* Latest bulletins */}

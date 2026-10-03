@@ -46,6 +46,15 @@ const SECTIONS = [
     ),
   },
   {
+    key: 'route-map',
+    label: 'Route map',
+    sub: 'Stages & route on a map',
+    color: '#22c55e',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></svg>
+    ),
+  },
+  {
     key: 'recce',
     label: 'Recce',
     sub: 'Dates · Passes · Speed limits',
@@ -113,10 +122,10 @@ const SECTIONS = [
   },
 ]
 
-export default function TileGrid({ rallyId, newCounts = {}, sportityUrl, hidden = [] }) {
+export default function TileGrid({ rallyId, newCounts = {}, sportityUrl, hidden = [], hasRouteMap = false }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-      {SECTIONS.filter(section => !hidden.includes(section.key)).map((section) => {
+      {SECTIONS.filter(section => !hidden.includes(section.key) && (section.key !== 'route-map' || hasRouteMap)).map((section) => {
         const hasNew = (newCounts[section.key] || 0) > 0
         const isExternalBulletins = section.key === 'bulletins' && sportityUrl
         const Comp = isExternalBulletins ? 'a' : Link

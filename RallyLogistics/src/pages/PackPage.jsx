@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import WeatherPanel from '../components/WeatherPanel'
+import RouteMap from '../components/RouteMap'
 
 // Route map files: a labelled list (e.g. one KMZ per day). Older rallies only have route_kmz_url.
 const routeFilesOf = r => (Array.isArray(r?.route_kmz_files) && r.route_kmz_files.length)
@@ -195,6 +196,10 @@ const SECTIONS = [
   },
   {
     id: 'team-map', label: 'Live team map', color: '#22c55e', desc: 'Where everyone is right now',
+    icon: <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7"><path fillRule="evenodd" d="M12 1.586l-4 4v12.828l4-4V1.586zM3.707 3.293A1 1 0 002 4v10a1 1 0 00.293.707L6 18.414V5.586L3.707 3.293zM17.707 5.293L14 1.586v12.828l2.293 2.293A1 1 0 0018 16V6a1 1 0 00-.293-.707z" clipRule="evenodd"/></svg>
+  },
+  {
+    id: 'route-map', label: 'Route map', color: '#16a34a', desc: 'Stages & route from the organiser',
     icon: <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7"><path fillRule="evenodd" d="M12 1.586l-4 4v12.828l4-4V1.586zM3.707 3.293A1 1 0 002 4v10a1 1 0 00.293.707L6 18.414V5.586L3.707 3.293zM17.707 5.293L14 1.586v12.828l2.293 2.293A1 1 0 0018 16V6a1 1 0 00-.293-.707z" clipRule="evenodd"/></svg>
   },
   {
@@ -724,6 +729,7 @@ export default function PackPage() {
             if (hiddenTiles.includes(s.id)) return false
             if ((isCal || isCustom || isMember) && s.id === 'team-chat') return false
             if (s.external) return !!rally?.[s.external]  // link-out tiles only show when the organiser set the link
+            if (s.id === 'route-map') return routeFilesOf(rally).length > 0
             return true
           }).map(s => (
             <button
@@ -800,6 +806,7 @@ export default function PackPage() {
           {tab === 'pre-event'     && <PreEventTab fi={fi} rally={rally} />}
           {tab === 'locations'     && <LocationsTab pack={pack} fi={fi} rally={rally} onSave={save} />}
           {tab === 'team-map'      && <TeamMapTab pack={pack} me={user} rally={rally} />}
+          {tab === 'route-map'     && <RouteMap rally={rally} />}
           {tab === 'fuel'          && <FuelTab pack={pack} onSave={save} />}
           {tab === 'recce'         && <RecceTab pack={pack} stages={stages} rally={rally} onSave={save} />}
           {tab === 'car-setup'     && <CarSetupTab pack={pack} rally={rally} onSave={save} />}
