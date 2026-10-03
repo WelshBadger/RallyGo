@@ -10,6 +10,7 @@ import WeatherPanel from '../components/WeatherPanel'
 import { LOGISTICS_URL } from '../lib/config'
 import { getStoredCode } from '../lib/rallyAccess'
 import { routeFilesOf } from '../components/RouteMap'
+import { sectionDocsQuery, rallyQuery } from '../lib/sectionData'
 
 // Public VAPID key for push subscriptions
 const VAPID_PUBLIC_KEY = 'BIcwQ-AgPS8rQeybSdJEYAohASdl7C3vx9ls5N5BWx0qC_2Av_gx1k-USjFEeZmjeM-KYGua2tKWqIYNWvPWZc8'
@@ -77,13 +78,17 @@ export default function EventPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('rallies')
-        .select('*')
-        .eq('id', rallyId)
-        .single()
+      const { data } = await rallyQuery(rallyId)
       setRally(data)
       setLoading(false)
+    }
+
+    // Offline: fetch every section's documents now, while there's signal, so the
+    // service worker has them cached and the section pages open with no signal.
+    function warmSections() {
+      if (!navigator.onLine) return
+      ;['documents', 'pre-event', 'route', 'bulletins', 'recce', 'team', 'accommodation', 'results', 'entry-list', 'rally-guide']
+        .forEach(section => { sectionDocsQuery(rallyId, section).then(() => {}, () => {}) })
     }
 
     async function loadNewCounts() {
@@ -108,6 +113,7 @@ export default function EventPage() {
 
     load()
     loadNewCounts()
+    warmSections()
   }, [rallyId])
 
   // Check notification permission status

@@ -5,6 +5,7 @@ import { formatDistanceToNow } from '../lib/dateUtils'
 import BackButton from '../components/BackButton'
 import RouteMap from '../components/RouteMap'
 import { stageMapFor } from '../lib/stageMaps'
+import { sectionDocsQuery, rallyQuery } from '../lib/sectionData'
 
 const SECTION_META = {
   'documents':  { label: 'Documents',               color: '#6366f1' },
@@ -32,17 +33,9 @@ export default function SectionPage() {
     localStorage.setItem(`rallygo:seen:${rallyId}:${section}`, new Date().toISOString())
 
     async function load() {
-      let docsQuery = supabase
-        .from('rally_documents')
-        .select('*')
-        .eq('rally_id', rallyId)
-        .order('created_at', { ascending: false })
-      if (section !== 'documents') {
-        docsQuery = docsQuery.eq('section', section)
-      }
       const [{ data: rallyData }, { data: documents }] = await Promise.all([
-        supabase.from('rallies').select('*').eq('id', rallyId).single(),
-        docsQuery,
+        rallyQuery(rallyId),
+        sectionDocsQuery(rallyId, section),
       ])
       setRally(rallyData)
       setDocs(documents || [])

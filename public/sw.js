@@ -41,10 +41,13 @@ self.addEventListener('fetch', event => {
   if (url.pathname.startsWith('/_vercel/')) return
 
   const isSupabase = url.hostname.includes('supabase.co')
+  // Route map: Leaflet + JSZip from the CDN and the map tiles already looked at
+  const isMapLib = url.hostname === 'cdnjs.cloudflare.com' && (url.pathname.includes('/leaflet/') || url.pathname.includes('/jszip/'))
+  const isMapTile = url.hostname.endsWith('tile.openstreetmap.org') || url.hostname.endsWith('tile.opentopomap.org')
 
-  // ── Supabase Storage FILES (images / PDFs) ── Cache-first, offline-friendly.
-  //    Caches opaque (no-cors) responses too so images survive with no signal.
-  if (isSupabase && url.pathname.includes('/storage/')) {
+  // ── Supabase Storage FILES (images / PDFs), map library and tiles ── Cache-first,
+  //    offline-friendly. Caches opaque (no-cors) responses too so they survive with no signal.
+  if (isMapLib || isMapTile || (isSupabase && url.pathname.includes('/storage/'))) {
     event.respondWith(
       caches.match(request).then(cached => {
         if (cached) return cached
