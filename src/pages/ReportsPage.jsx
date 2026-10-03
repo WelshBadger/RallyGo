@@ -30,6 +30,13 @@ function ago(ts) {
 
 export default function ReportsPage() {
   const [tab, setTab] = useState('overview')
+  const [drill, setDrill] = useState({}) // preset filter / sort for the detail tab a tile opened
+
+  function openDetail(nextTab, preset = {}) {
+    setDrill({ ...preset, at: Date.now() })
+    setTab(nextTab)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -64,7 +71,7 @@ export default function ReportsPage() {
         {TABS.map(t => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => { setDrill({}); setTab(t.id) }}
             className={`px-3.5 py-2 rounded-lg text-sm whitespace-nowrap transition-all ${
               tab === t.id ? 'bg-rl-accent text-white font-medium' : 'text-white/50 hover:text-white hover:bg-white/5'
             }`}
@@ -82,10 +89,10 @@ export default function ReportsPage() {
         <div className="h-64 bg-white/5 rounded-2xl animate-pulse" />
       ) : (
         <>
-          {tab === 'overview' && <Overview data={data} />}
-          {tab === 'rallies' && <RalliesReport rallies={data.rallies} />}
-          {tab === 'people' && <PeopleReport people={data.people} />}
-          {tab === 'logistics' && <LogisticsReport data={data} />}
+          {tab === 'overview' && <Overview data={data} onOpen={openDetail} />}
+          {tab === 'rallies' && <RalliesReport key={drill.at || 0} rallies={data.rallies} preset={drill} />}
+          {tab === 'people' && <PeopleReport key={drill.at || 0} people={data.people} preset={drill} />}
+          {tab === 'logistics' && <LogisticsReport key={drill.at || 0} data={data} preset={drill} />}
         </>
       )}
     </main>
@@ -94,17 +101,26 @@ export default function ReportsPage() {
 
 // ─── Overview ────────────────────────────────────────────────────────────────
 
-function Stat({ label, value, sub }) {
-  return (
-    <div className="bg-rl-card border border-white/10 rounded-xl p-4">
-      <p className="text-white/40 text-[11px] uppercase tracking-wide mb-1.5">{label}</p>
+function Stat({ label, value, sub, onClick }) {
+  const inner = (
+    <>
+      <p className="text-white/40 text-[11px] uppercase tracking-wide mb-1.5 pr-4">{label}</p>
       <p className="text-white text-2xl font-semibold leading-none">{typeof value === 'number' ? nf.format(value) : value}</p>
       {sub && <p className="text-white/35 text-xs mt-1.5">{sub}</p>}
-    </div>
+      {onClick && <span className="absolute top-3 right-3 text-white/25 group-hover:text-rl-accent transition-colors" aria-hidden="true">›</span>}
+    </>
+  )
+  return onClick ? (
+    <button type="button" onClick={onClick}
+      className="group relative text-left bg-rl-card border border-white/10 rounded-xl p-4 hover:border-rl-accent/50 active:scale-[0.98] transition-all">
+      {inner}
+    </button>
+  ) : (
+    <div className="relative bg-rl-card border border-white/10 rounded-xl p-4">{inner}</div>
   )
 }
 
-function Overview({ data }) {
+function Overview({ data, onOpen }) {
   const t = data.totals
   const daily = data.daily || []
   return (
@@ -112,29 +128,29 @@ function Overview({ data }) {
       <section>
         <h2 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3">People</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Stat label="Accounts" value={t.accounts} sub={`${t.new_7d} new in 7 days`} />
-          <Stat label="Active today" value={t.active_24h} sub={`${t.active_7d} in 7 days`} />
-          <Stat label="Organisers" value={t.organisers} />
-          <Stat label="Guests" value={t.guests} sub="Joined packs by share link" />
+          <Stat label="Accounts" value={t.accounts} sub={`${t.new_7d} new in 7 days`} onClick={() => onOpen('people', { activity: 'all' })} />
+          <Stat label="Active today" value={t.active_24h} sub={`${t.active_7d} in 7 days`} onClick={() => onOpen('people', { activity: '24h' })} />
+          <Stat label="Organisers" value={t.organisers} onClick={() => onOpen('people', { type: 'Organiser' })} />
+          <Stat label="Guests" value={t.guests} sub="Joined packs by share link" onClick={() => onOpen('people', { type: 'Guest' })} />
         </div>
       </section>
 
       <section>
         <h2 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3">RallyHQ</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Stat label="Rallies" value={t.rallies} sub={`${t.rallies_active} active · ${t.calendar_events} on calendar`} />
-          <Stat label="Devices opened with a code" value={t.code_devices} sub={`${t.code_devices_24h} in the last 24h`} />
-          <Stat label="Bulletin alert sign-ups" value={t.alert_signups} />
-          <Stat label="Documents posted" value={t.documents} />
+          <Stat label="Rallies" value={t.rallies} sub={`${t.rallies_active} active · ${t.calendar_events} on calendar`} onClick={() => onOpen('rallies', { sort: 'date' })} />
+          <Stat label="Devices opened with a code" value={t.code_devices} sub={`${t.code_devices_24h} in the last 24h`} onClick={() => onOpen('rallies', { sort: 'code_devices' })} />
+          <Stat label="Bulletin alert sign-ups" value={t.alert_signups} onClick={() => onOpen('rallies', { sort: 'alerts' })} />
+          <Stat label="Documents posted" value={t.documents} onClick={() => onOpen('rallies', { sort: 'documents' })} />
         </div>
       </section>
 
       <section>
         <h2 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3">Rally Logistics</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Stat label="Packs" value={t.packs} sub={`${t.pack_members} people added to packs`} />
-          <Stat label="Sharing location now" value={t.sharing_now} />
-          <Stat label="Team chat messages" value={t.chat_messages} sub={`${t.chat_7d} in 7 days`} />
+          <Stat label="Packs" value={t.packs} sub={`${t.pack_members} people added to packs`} onClick={() => onOpen('logistics', {})} />
+          <Stat label="Sharing location now" value={t.sharing_now} onClick={() => onOpen('logistics', { sharing: true })} />
+          <Stat label="Team chat messages" value={t.chat_messages} sub={`${t.chat_7d} in 7 days`} onClick={() => onOpen('rallies', { sort: 'chat' })} />
           <Stat label="Files stored" value={t.files} sub={`${nf.format(t.files_mb)} MB`} />
         </div>
       </section>
@@ -211,22 +227,36 @@ function DailyChart({ title, rows, field }) {
 
 // ─── Tables ──────────────────────────────────────────────────────────────────
 
-function Table({ columns, rows, empty = 'Nothing yet.' }) {
+function Table({ columns, rows, empty = 'Nothing yet.', initialSort }) {
+  const [sort, setSort] = useState(initialSort || null) // { key, dir }
   if (!rows.length) return <p className="text-white/40 text-sm py-8 text-center">{empty}</p>
+  const col = sort && columns.find(c => c.key === sort.key)
+  const value = (c, r) => (c.sortValue ? c.sortValue(r) : r[c.key])
+  const sorted = col ? [...rows].sort((a, b) => {
+    const va = value(col, a), vb = value(col, b)
+    const cmp = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va ?? '').localeCompare(String(vb ?? ''))
+    return sort.dir === 'asc' ? cmp : -cmp
+  }) : rows
+  function toggle(c) {
+    setSort(s => s?.key === c.key ? { key: c.key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key: c.key, dir: c.num ? 'desc' : 'asc' })
+  }
   return (
     <div className="bg-rl-card border border-white/10 rounded-xl overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-white/10">
             {columns.map(c => (
-              <th key={c.key} className={`px-3 py-2.5 text-[11px] uppercase tracking-wide text-white/40 font-medium whitespace-nowrap ${c.num ? 'text-right' : 'text-left'}`}>
-                {c.label}
+              <th key={c.key} aria-sort={sort?.key === c.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
+                className={`px-3 py-2.5 text-[11px] uppercase tracking-wide font-medium whitespace-nowrap ${c.num ? 'text-right' : 'text-left'}`}>
+                <button type="button" onClick={() => toggle(c)} className={`uppercase tracking-wide ${sort?.key === c.key ? 'text-white' : 'text-white/40 hover:text-white/70'}`}>
+                  {c.label}{sort?.key === c.key ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}
+                </button>
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
+          {sorted.map((r, i) => (
             <tr key={i} className="border-b border-white/5 last:border-0">
               {columns.map(c => (
                 <td key={c.key} className={`px-3 py-2.5 whitespace-nowrap ${c.num ? 'text-right tabular-nums text-white/70' : 'text-white/80'}`}>
@@ -241,14 +271,16 @@ function Table({ columns, rows, empty = 'Nothing yet.' }) {
   )
 }
 
-function RalliesReport({ rallies }) {
+function RalliesReport({ rallies, preset = {} }) {
+  const initialSort = preset.sort ? { key: preset.sort, dir: preset.sort === 'date' ? 'desc' : 'desc' } : null
   return (
     <Table
       rows={rallies}
+      initialSort={initialSort}
       empty="No rallies yet."
       columns={[
         { key: 'name', label: 'Rally', render: r => <span className="font-medium text-white">{r.name}</span> },
-        { key: 'date', label: 'Date', render: r => fmtDate(r.date) },
+        { key: 'date', label: 'Date', render: r => fmtDate(r.date), sortValue: r => r.date || '' },
         { key: 'organiser', label: 'Organiser' },
         { key: 'status', label: 'Status' },
         { key: 'code_devices', label: 'Code devices', num: true, render: r => `${nf.format(r.code_devices)}${r.code_devices_24h ? ` (${r.code_devices_24h} today)` : ''}` },
@@ -267,12 +299,21 @@ function RalliesReport({ rallies }) {
   )
 }
 
-function PeopleReport({ people }) {
+const ACTIVITY = {
+  all: { label: 'Any activity', test: () => true },
+  '24h': { label: 'Active in last 24h', test: p => p.last_seen && Date.now() - new Date(p.last_seen) < 864e5 },
+  '7d': { label: 'Active in last 7 days', test: p => p.last_seen && Date.now() - new Date(p.last_seen) < 7 * 864e5 },
+  new7d: { label: 'Joined in last 7 days', test: p => Date.now() - new Date(p.joined) < 7 * 864e5 },
+}
+
+function PeopleReport({ people, preset = {} }) {
   const [q, setQ] = useState('')
-  const [type, setType] = useState('All')
+  const [type, setType] = useState(preset.type || 'All')
+  const [activity, setActivity] = useState(preset.activity || 'all')
   const types = useMemo(() => ['All', ...new Set(people.map(p => p.type))], [people])
   const rows = people.filter(p =>
     (type === 'All' || p.type === type) &&
+    ACTIVITY[activity].test(p) &&
     (!q || `${p.name} ${p.email || ''}`.toLowerCase().includes(q.toLowerCase()))
   )
   return (
@@ -282,16 +323,20 @@ function PeopleReport({ people }) {
         <select value={type} onChange={e => setType(e.target.value)} className="rl-input w-40" aria-label="Account type">
           {types.map(t => <option key={t}>{t}</option>)}
         </select>
+        <select value={activity} onChange={e => setActivity(e.target.value)} className="rl-input w-48" aria-label="Activity">
+          {Object.entries(ACTIVITY).map(([k, a]) => <option key={k} value={k}>{a.label}</option>)}
+        </select>
       </div>
       <p className="text-white/35 text-xs">{rows.length} of {people.length}</p>
       <Table
         rows={rows}
+        initialSort={activity === '24h' || activity === '7d' ? { key: 'last_seen', dir: 'desc' } : null}
         columns={[
           { key: 'name', label: 'Name', render: r => <span className="font-medium text-white">{r.name}</span> },
           { key: 'email', label: 'Email', render: r => r.email || '—' },
           { key: 'type', label: 'Type' },
-          { key: 'joined', label: 'Joined', render: r => fmtDate(r.joined) },
-          { key: 'last_seen', label: 'Last active', render: r => ago(r.last_seen) },
+          { key: 'joined', label: 'Joined', render: r => fmtDate(r.joined), sortValue: r => r.joined || '' },
+          { key: 'last_seen', label: 'Last active', render: r => ago(r.last_seen), sortValue: r => r.last_seen || '' },
           { key: 'packs', label: 'Packs', num: true },
           { key: 'marketing', label: 'Marketing OK', render: r => r.marketing ? 'Yes' : '—' },
         ]}
@@ -300,12 +345,20 @@ function PeopleReport({ people }) {
   )
 }
 
-function LogisticsReport({ data }) {
+function LogisticsReport({ data, preset = {} }) {
+  const [sharingOnly, setSharingOnly] = useState(!!preset.sharing)
+  const rows = sharingOnly ? data.packs.filter(p => p.sharing > 0) : data.packs
   return (
     <div className="space-y-3">
-      <p className="text-white/35 text-xs">Most recently updated first. "Sharing" = crew members whose location updated in the last 15 minutes.</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-white/35 text-xs">Most recently updated first. "Sharing" = crew members whose location updated in the last 15 minutes.</p>
+        <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer">
+          <input type="checkbox" checked={sharingOnly} onChange={e => setSharingOnly(e.target.checked)} className="w-4 h-4 accent-rl-accent" />
+          Only packs sharing location now
+        </label>
+      </div>
       <Table
-        rows={data.packs}
+        rows={rows}
         empty="No packs yet."
         columns={[
           { key: 'rally', label: 'Rally', render: r => <span className="font-medium text-white">{r.rally}</span> },
@@ -314,8 +367,8 @@ function LogisticsReport({ data }) {
           { key: 'car', label: 'Car', render: r => r.car || '—' },
           { key: 'members', label: 'Members', num: true },
           { key: 'sharing', label: 'Sharing', num: true },
-          { key: 'created', label: 'Created', render: r => fmtDate(r.created) },
-          { key: 'updated', label: 'Last change', render: r => ago(r.updated || r.created) },
+          { key: 'created', label: 'Created', render: r => fmtDate(r.created), sortValue: r => r.created || '' },
+          { key: 'updated', label: 'Last change', render: r => ago(r.updated || r.created), sortValue: r => r.updated || r.created || '' },
         ]}
       />
     </div>
