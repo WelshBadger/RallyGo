@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 import { reencodeImage } from '../lib/images'
@@ -32,21 +33,42 @@ function useWakeLock(on) {
   }, [on])
 }
 
-// Full-screen overlay shell used by the per-stage screens
-function Sheet({ title, sub, onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-50 bg-rl-bg overflow-y-auto" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-      <div className="max-w-3xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <div className="min-w-0">
-            <p className="text-white font-semibold text-base truncate">{title}</p>
-            {sub && <p className="text-white/40 text-xs truncate">{sub}</p>}
-          </div>
-          <button onClick={onClose} className="rl-btn-ghost text-xs flex-shrink-0">Close</button>
+// Full-screen screen used for each stage: rendered on <body> (so nothing on the page
+// can clip it), page behind it doesn't scroll, and a back bar pinned at the top —
+// below the phone's status bar / notch.
+function useNoBodyScroll() {
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+}
+
+function Sheet({ title, sub, backLabel = 'Back', onClose, children }) {
+  useNoBodyScroll()
+  return createPortal(
+    <div className="fixed inset-0 z-[70] bg-rl-bg overflow-y-auto overscroll-contain">
+      <div className="sticky top-0 z-10 bg-rl-bg border-b border-white/10" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <div className="max-w-3xl mx-auto px-3 py-2.5">
+          <button onClick={onClose}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-rl-card border border-white/15 text-left active:scale-[0.99]">
+            <span className="w-8 h-8 rounded-lg bg-white/12 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-white" viewBox="0 0 16 16" fill="currentColor">
+                <path fillRule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z" clipRule="evenodd" />
+              </svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-white font-semibold text-sm leading-tight truncate">{backLabel}</span>
+              <span className="block text-white/45 text-[11px] leading-tight truncate mt-0.5">{title}{sub ? ` · ${sub}` : ''}</span>
+            </span>
+          </button>
         </div>
+      </div>
+      <div className="max-w-3xl mx-auto px-4 py-4" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -55,6 +77,10 @@ function Sheet({ title, sub, onClose, children }) {
 // The co-driver's view: every page of the stage in one continuous, scrollable
 // document, screen kept on, big page-down / page-up buttons.
 function PacenotesReader({ title, pages, onClose }) {
+  return createPortal(<ReaderBody title={title} pages={pages} onClose={onClose} />, document.body)
+}
+
+function ReaderBody({ title, pages, onClose }) {
   const [zoom, setZoom] = useState(1)
   const [current, setCurrent] = useState(0)
   const pageRefs = useRef([])
@@ -80,7 +106,7 @@ function PacenotesReader({ title, pages, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <div className="fixed inset-0 z-[80] bg-black flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <div className="flex items-center justify-between gap-2 px-3 py-2 bg-black/90" style={{ color: '#fff' }}>
         <p className="text-sm font-semibold truncate" style={{ color: '#fff' }}>{title}</p>
         <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -203,7 +229,7 @@ export function StagePacenotes({ pack, stageKey, title, canEdit, onSave, onClose
   }
 
   return (
-    <Sheet title={`Pacenotes — ${title}`} sub={`${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`} onClose={onClose}>
+    <Sheet backLabel="Back" title={`Pacenotes — ${title}`} sub={`${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`} onClose={onClose}>
       {pages.length > 0 && (
         <div className="grid grid-cols-2 gap-2 mb-4">
           <button onClick={() => setReading(true)} className="rl-btn-primary justify-center text-sm py-3">Read pacenotes</button>
