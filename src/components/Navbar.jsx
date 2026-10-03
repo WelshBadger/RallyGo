@@ -49,10 +49,11 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className={`sticky top-0 z-50 transition-all duration-300 ${
+      {/* paddingTop keeps the bar below the phone's status bar / notch (installed app) */}
+      <nav style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }} className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
           ? 'bg-white/95 backdrop-blur-md shadow-[0_1px_0_0_rgba(255,255,255,0.06)]'
-          : 'bg-transparent'
+          : 'bg-white'
       }`}>
         {/* Animated accent line */}
         <div className="absolute bottom-0 left-0 right-0 h-px overflow-hidden">

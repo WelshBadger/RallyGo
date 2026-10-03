@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 export default function Navbar() {
   const { user } = useAuth()
   return (
-    <nav className="border-b border-white/8 bg-rl-bg/95 backdrop-blur sticky top-0 z-50">
+    <nav style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }} className="border-b border-white/8 bg-rl-bg/95 backdrop-blur sticky top-0 z-50">
       <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 no-underline">
           <div className="w-7 h-7 rounded-lg bg-rl-accent flex items-center justify-center relative overflow-hidden">
