@@ -11,9 +11,9 @@ export default function ChoicePage() {
       <div className="choice-hero mb-8 sm:mb-10 text-center sm:text-left">
         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#FF9641] mb-3">RallyHQ</p>
         <h1 className="text-3xl sm:text-5xl font-bold text-white tracking-tight leading-[1.05] mb-3">
-          Where do you<br className="hidden sm:block" /> line up?
+          Choose your role
         </h1>
-        <p className="text-white/50 text-sm sm:text-base">Pick your role to get started.</p>
+        <p className="text-white/80 text-sm sm:text-base">How are you taking part?</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">

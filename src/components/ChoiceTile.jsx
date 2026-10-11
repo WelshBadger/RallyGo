@@ -25,8 +25,8 @@ export default function ChoiceTile({ to, href, color, icon, label, sub, cta = 'E
         '--tile': color,
         animationDelay: `${index * 110}ms`,
         background: row
-          ? `linear-gradient(100deg, ${color}2e 0%, #222222 60%, #1a1a1a 100%)`
-          : `linear-gradient(145deg, ${color}2e 0%, #222222 55%, #1a1a1a 100%)`,
+          ? `linear-gradient(100deg, ${color}22 0%, #1f1f1f 55%, #181818 100%)`
+          : `linear-gradient(145deg, ${color}22 0%, #1f1f1f 50%, #181818 100%)`,
       }}
     >
       {/* soft colour glow that breathes */}
@@ -39,11 +39,11 @@ export default function ChoiceTile({ to, href, color, icon, label, sub, cta = 'E
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="choice-stripe absolute top-[-20%] right-[18%] h-[160%] w-5 -skew-x-[28deg]"
-          style={{ background: `linear-gradient(180deg, ${color}00, ${color}66, ${color}00)` }}
+          style={{ background: `linear-gradient(180deg, ${color}00, ${color}38, ${color}00)` }}
         />
         <div
           className="choice-stripe absolute top-[-20%] right-[8%] h-[160%] w-2 -skew-x-[28deg]"
-          style={{ background: `linear-gradient(180deg, ${color}00, ${color}99, ${color}00)`, animationDelay: '0.4s' }}
+          style={{ background: `linear-gradient(180deg, ${color}00, ${color}55, ${color}00)`, animationDelay: '0.4s' }}
         />
       </div>
 
@@ -63,11 +63,11 @@ export default function ChoiceTile({ to, href, color, icon, label, sub, cta = 'E
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-lg sm:text-xl font-semibold leading-tight tracking-tight mb-1">{label}</p>
-            <p className="text-white/55 text-sm leading-snug">{sub}</p>
+            <p className="text-white/85 text-sm leading-snug">{sub}</p>
           </div>
           <div
-            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white transition-transform duration-200 group-hover:translate-x-1"
-            style={{ background: color, boxShadow: `0 6px 18px ${color}55` }}
+            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-200 group-hover:translate-x-1"
+            style={{ background: color, color: '#0f0f0f', boxShadow: `0 6px 18px ${color}55` }}
             aria-label={cta}
           >
             <Arrow />
@@ -84,12 +84,12 @@ export default function ChoiceTile({ to, href, color, icon, label, sub, cta = 'E
 
           <div className="flex-1">
             <p className="text-white text-xl sm:text-2xl font-semibold leading-tight tracking-tight mb-2">{label}</p>
-            <p className="text-white/55 text-sm leading-snug max-w-[26ch] sm:max-w-none">{sub}</p>
+            <p className="text-white/85 text-sm leading-snug max-w-[28ch] sm:max-w-none">{sub}</p>
           </div>
 
           <div
-            className="mt-5 inline-flex items-center gap-2 self-start rounded-full px-4 py-2 text-sm font-semibold text-white transition-all duration-200 group-hover:gap-3"
-            style={{ background: color, boxShadow: `0 6px 20px ${color}55` }}
+            className="mt-5 inline-flex items-center gap-2 self-start rounded-full px-4 py-2 text-sm font-bold transition-all duration-200 group-hover:gap-3"
+            style={{ background: color, color: '#0f0f0f', boxShadow: `0 6px 20px ${color}55` }}
           >
             {cta}
             <Arrow className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
