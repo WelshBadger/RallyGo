@@ -41,7 +41,7 @@
 
 .navbar-shimmer {
   animation: navbar-shimmer 4s ease-in-out infinite;
-  background: linear-gradient(90deg, transparent 0%, #E24B4A 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, #FF9641 50%, transparent 100%);
   width: 40%;
   height: 100%;
 }
@@ -49,6 +49,15 @@
 .navbar-glow {
   animation: navbar-glow-pulse 3s ease-in-out infinite;
 }
+
+/* Page and section headings use the display face app-wide */
+h1, h2 {
+  font-family: 'Bricolage Grotesque Variable', Inter, system-ui, sans-serif !important;
+  font-stretch: 75% !important;
+  letter-spacing: -0.03em;
+}
+h1 { font-weight: 800 !important; }
+h2 { font-weight: 700; }
 
 /* ---------------------------------------------------------------------------
    Slabs: the opening / role-choice screens. Two flat colour blocks cut on the
@@ -131,6 +140,10 @@
 .hero-orange { position: relative; background: var(--orange); color: var(--carbon); padding: 20px 24px calc(30px + var(--cut)); z-index: 3;
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), 0 100%); }
 .hero-orange .display { font-size: clamp(3rem, 17vw, 6.5rem); margin: 18px 0 10px; }
+.hero-orange > .display:first-child { margin-top: 6px; }
+.hero-orange .display.long { font-size: clamp(2.3rem, 11.5vw, 4.4rem); line-height: 0.95; }
+.hero-orange .hero-cta { display: inline-block; margin-top: 18px; padding: 12px 22px; border-radius: 999px; background: var(--carbon); color: var(--orange); font-weight: 800; font-size: 15px; text-decoration: none; }
+.hero-orange .hero-cta:active { transform: scale(0.97); }
 .hero-orange p { margin: 0; font-size: 17px; font-weight: 600; max-width: 28ch; }
 .hero-orange .back { display: inline-flex; align-items: center; gap: 8px; color: var(--carbon); text-decoration: none; font-weight: 700; font-size: 14px;
   padding: 8px 14px 8px 10px; border-radius: 999px; background: rgba(43, 43, 43, 0.12); }
@@ -161,7 +174,7 @@
   }
 
   .rl-btn-primary {
-    @apply bg-rl-accent hover:bg-rl-accent-hover text-white font-medium px-5 py-2.5 rounded-lg transition-colors duration-150 text-sm;
+    @apply bg-rl-accent hover:bg-rl-accent-hover text-rl-carbon font-bold px-5 py-2.5 rounded-lg transition-colors duration-150 text-sm;
   }
 
   .rl-btn-ghost {
@@ -220,6 +233,9 @@
 .placeholder-white\/25::placeholder,
 .placeholder-white\/30::placeholder { color: #94a3b8 !important; }
 
-.bg-rl-accent.text-white { color: #ffffff !important; }
+.bg-rl-accent.text-white { color: #303030 !important; }
+/* orange as text on white needs to be deeper to stay readable */
+.text-rl-accent, .hover\:text-rl-accent:hover, .group:hover .group-hover\:text-rl-accent { color: #c2570c !important; }
+.bg-rl-accent .text-rl-accent { color: #303030 !important; }
 
 .bg-black\/90 .text-white, .bg-black\/80 .text-white, .bg-black\/70 .text-white, .bg-black\/60 .text-white { color: #ffffff !important; }

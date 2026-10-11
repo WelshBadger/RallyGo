@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
-import BackButton from '../components/BackButton'
+import PageHero from '../components/PageHero'
 
 const EVENT_PRICE = parseInt(import.meta.env.VITE_EVENT_PRICE_PENCE || '5000')
 const PRICE_DISPLAY = `£${(EVENT_PRICE / 100).toFixed(2)}`
@@ -98,17 +98,15 @@ export default function CreateEventPage() {
   }
 
   return (
+    <>
+    <PageHero
+      back={{ to: '/organiser', label: 'Dashboard' }}
+      title="Create an event"
+      sub={isSuperAdmin
+        ? 'Super admin: the rally is created as active immediately.'
+        : `Fill in your event details. You'll go to a secure payment page (${PRICE_DISPLAY} per event) to activate it.`}
+    />
     <main className="max-w-xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <BackButton to="/organiser" label="Dashboard" />
-      </div>
-
-      <h1 className="text-2xl font-medium text-white mb-1">Create an event</h1>
-      <p className="text-white/40 text-sm mb-7">
-        {isSuperAdmin
-          ? 'Super admin — rally will be created as active immediately.'
-          : `Fill in your event details. You'll be taken to a secure payment page (${PRICE_DISPLAY} per event) to activate it.`}
-      </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
@@ -252,5 +250,6 @@ export default function CreateEventPage() {
         </button>
       </form>
     </main>
+    </>
   )
 }
