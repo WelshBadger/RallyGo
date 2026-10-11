@@ -29,6 +29,8 @@ export default function CompetitorPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <ChoiceTile
+          index={0}
+          cta="View rallies"
           to="/calendar"
           color="#E24B4A"
           label="Rally info"
@@ -41,6 +43,8 @@ export default function CompetitorPage() {
           }
         />
         <ChoiceTile
+          index={1}
+          cta="Open pack"
           href={LOGISTICS_URL}
           color="#1D9E75"
           label="Rally logistics"

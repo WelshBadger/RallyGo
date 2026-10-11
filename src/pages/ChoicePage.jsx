@@ -7,12 +7,19 @@ const iconProps = {
 
 export default function ChoicePage() {
   return (
-    <main className="max-w-2xl mx-auto px-4 py-10 sm:py-16">
-      <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-1">Welcome to RallyHQ</h1>
-      <p className="text-white/40 text-sm mb-7">How are you taking part?</p>
+    <main className="max-w-3xl mx-auto px-4 py-10 sm:py-16">
+      <div className="choice-hero mb-8 sm:mb-10 text-center sm:text-left">
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#FF9641] mb-3">RallyHQ</p>
+        <h1 className="text-3xl sm:text-5xl font-bold text-white tracking-tight leading-[1.05] mb-3">
+          Where do you<br className="hidden sm:block" /> line up?
+        </h1>
+        <p className="text-white/50 text-sm sm:text-base">Pick your role to get started.</p>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         <ChoiceTile
+          index={0}
+          cta="Organise"
           to="/organiser"
           color="#E24B4A"
           label="Rally organiser"
@@ -26,6 +33,8 @@ export default function ChoicePage() {
           }
         />
         <ChoiceTile
+          index={1}
+          cta="Compete"
           to="/competitor"
           color="#378ADD"
           label="Competitor"
