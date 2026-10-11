@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatDateRange } from '../lib/dateUtils'
 import { getStoredCode } from '../lib/rallyAccess'
-import BackButton from '../components/BackButton'
 
 const SURFACE = {
   gravel:     { bg: 'bg-amber-500',   light: 'bg-amber-500/15',  border: 'border-amber-500/40',  text: 'text-amber-300',   dot: 'bg-amber-400',   label: 'Gravel Rally' },
@@ -87,25 +86,12 @@ export default function CalendarPage() {
   const confirmedCount = filteredEvents.filter(e => e.status !== 'cancelled').length
 
   return (
-    <main className="choice-slide max-w-2xl mx-auto px-4 py-8 sm:py-10">
+    <main className="max-w-2xl mx-auto px-4 py-8 sm:py-10">
 
-      <div className="mb-5">
-        <BackButton to="/competitor" label="Back" />
-      </div>
-
-      {/* Banner in the Competitor blue, so the journey reads as one flow */}
-      <div
-        className="relative overflow-hidden rounded-3xl border border-[#2B72C638] bg-white px-6 py-5 sm:px-8 sm:py-6 mb-5"
-        style={{ background: 'linear-gradient(120deg, #2B72C626 0%, #ffffff 70%)' }}
-      >
-        <div className="choice-glow pointer-events-none absolute -top-20 -left-10 w-64 h-64 rounded-full blur-3xl" style={{ background: '#2B72C6' }} />
-        <div className="relative">
-          <span className="inline-block rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] mb-3" style={{ background: '#2B72C6', color: '#ffffff' }}>
-            Rally info
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight mb-1">UK rally calendar</h1>
-          <p className="text-slate-600 text-sm">{loading ? '…' : `${confirmedCount} confirmed events`}</p>
-        </div>
+      <div className="hero-orange -mx-4 -mt-8 sm:-mt-10 mb-5">
+        <Link to="/competitor" className="back"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z" clipRule="evenodd" /></svg> Back</Link>
+        <h1 className="display">Rally info</h1>
+        <p>{loading ? '…' : `UK rally calendar, ${confirmedCount} confirmed events`}</p>
       </div>
 
       {/* Championship filter chips */}

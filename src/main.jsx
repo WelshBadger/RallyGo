@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
+import '@fontsource-variable/bricolage-grotesque/wdth.css'
 import './index.css'
 import { trackSafeTop } from './lib/safeTop'
 
