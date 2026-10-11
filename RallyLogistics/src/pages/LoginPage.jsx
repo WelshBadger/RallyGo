@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
+import PageHero from '../components/PageHero'
 
 export default function LoginPage() {
   const [mode, setMode] = useState('signin')
@@ -41,15 +42,10 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-[80vh] flex items-center justify-center px-4">
+    <>
+    <PageHero title={mode === 'signup' ? 'Create account' : 'Sign in'} sub="Rally Logistics, by RallyHQ" />
+    <main className="flex justify-center px-4 py-6">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <img src="/icons/logo-circle.png" alt="" width="56" height="56" className="w-14 h-14 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-white mb-1">
-            {mode === 'signup' ? 'Create your account' : 'Sign in'}
-          </h1>
-          <p className="text-white/40 text-sm">Rally Logistics — by RallyHQ</p>
-        </div>
 
         {mode === 'signup' && (
           <div className="bg-rl-accent/10 border border-rl-accent/25 rounded-xl px-4 py-3 mb-5 text-center">
@@ -104,5 +100,6 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+    </>
   )
 }

@@ -8,6 +8,7 @@ import RouteMap from '../components/RouteMap'
 import { PacenotesTab, StagePacenotes, RecceVideos } from '../components/RecceMedia'
 import { reencodeImage } from '../lib/images'
 import { stageMapFor } from '../lib/stageMaps'
+import PageHero from '../components/PageHero'
 
 // Route map files: a labelled list (e.g. one KMZ per day). Older rallies only have route_kmz_url.
 const routeFilesOf = r => (Array.isArray(r?.route_kmz_files) && r.route_kmz_files.length)
@@ -569,9 +570,10 @@ export default function PackPage() {
             .map(f => ({ number: f.stage, name: f.name, distance: f.distance })) || []))
 
   return (
+    <>
+    <PageHero title={rally.name} sub={[fmt(rally.date) + (rally.end_date && rally.end_date !== rally.date ? ` – ${fmt(rally.end_date)}` : ''), rally.location].filter(Boolean).join(' · ')} back={{ to: '/', label: 'All events' }} />
     <main className="max-w-3xl mx-auto px-4 py-6">
       <div className="mb-6">
-<BackBar label="All events" to="/" />
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
           <div className="flex items-start gap-3 min-w-0">
             {rally.logo_url && (
@@ -579,8 +581,6 @@ export default function PackPage() {
             )}
             <div className="min-w-0">
               {rally.series && <p className="text-white/30 text-xs mb-1">{rally.series}</p>}
-              <h1 className="text-xl font-semibold text-white">{rally.name}</h1>
-              <p className="text-white/40 text-sm mt-0.5">{fmt(rally.date)}{rally.end_date && rally.end_date !== rally.date ? ` – ${fmt(rally.end_date)}` : ''}{rally.location && ` · ${rally.location}`}</p>
             </div>
           </div>
           <div className="flex flex-row flex-wrap items-center sm:flex-col sm:items-end gap-2 flex-shrink-0">
@@ -805,6 +805,7 @@ export default function PackPage() {
         </>
       )}
     </main>
+    </>
   )
 }
 

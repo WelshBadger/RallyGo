@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
+import PageHero from '../components/PageHero'
 
 // Shown once after registering, before the first pack opens.
 // Payment is not taken yet — access is free until the end of 2026.
@@ -7,11 +8,9 @@ export default function SubscriptionPage() {
   const returnTo = useLocation().state?.returnTo || '/'
 
   return (
-    <main className="max-w-sm mx-auto px-4 py-10 space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-white mb-1">Your subscription</h1>
-        <p className="text-white/40 text-sm">Rally Logistics is a subscription service for crews.</p>
-      </div>
+    <>
+    <PageHero title="Your subscription" sub="Rally Logistics is a subscription service for crews." />
+    <main className="max-w-sm mx-auto px-4 py-6 space-y-5">
 
       <div className="bg-rl-accent/8 border border-rl-accent/20 rounded-2xl p-5">
         <p className="text-rl-accent font-semibold text-sm">Free access active</p>
@@ -33,5 +32,6 @@ export default function SubscriptionPage() {
         Continue
       </button>
     </main>
+    </>
   )
 }

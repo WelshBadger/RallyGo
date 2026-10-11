@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
+import PageHero from '../components/PageHero'
 
 function fmt(d) {
   if (!d) return ''
@@ -327,6 +328,8 @@ export default function RallySelectPage() {
   }
 
   return (
+    <>
+    <PageHero title="Choose your rally" sub="Open your crew's pack." />
     <main className="max-w-lg mx-auto px-4 py-6">
       {pinned && (() => {
         const now = pinned.date <= today
@@ -351,7 +354,7 @@ export default function RallySelectPage() {
       })()}
 
       <div className="flex items-start justify-between gap-3 mb-1">
-        <h1 className="text-white font-semibold text-lg">Choose your rally</h1>
+        <h2 className="text-white font-semibold text-lg">Your rallies</h2>
         {user ? (
           <button onClick={() => setAdding(a => !a)} className="rl-btn-primary text-xs flex-shrink-0">
             {adding ? 'Close' : '+ Add rally'}
@@ -477,5 +480,6 @@ export default function RallySelectPage() {
         </>
       )}
     </main>
+    </>
   )
 }

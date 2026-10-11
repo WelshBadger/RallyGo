@@ -1,7 +1,7 @@
 // Rally Logistics Service Worker — offline-first caching + push notifications
-const SHELL_CACHE = 'rally-logistics-shell-v6'
-const RUNTIME_CACHE = 'rally-logistics-runtime-v6'
-const FILE_CACHE = 'rally-logistics-files-v6'
+const SHELL_CACHE = 'rally-logistics-shell-v7'
+const RUNTIME_CACHE = 'rally-logistics-runtime-v7'
+const FILE_CACHE = 'rally-logistics-files-v7'
 
 self.addEventListener('install', event => {
   self.skipWaiting()
