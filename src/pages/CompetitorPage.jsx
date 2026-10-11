@@ -19,20 +19,33 @@ export default function CompetitorPage() {
   }, [])
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
+    <main className="choice-slide max-w-2xl mx-auto px-4 py-8 sm:py-12">
       <div className="mb-5">
         <BackButton to="/" label="Back" />
       </div>
 
-      <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-1">Competitor</h1>
-      <p className="text-white/40 text-sm mb-7">What do you need?</p>
+      {/* Banner so this feels like a new place, not a repeat of the opening screen */}
+      <div
+        className="relative overflow-hidden rounded-3xl border border-white/10 px-6 py-6 sm:px-8 sm:py-8 mb-5"
+        style={{ background: 'linear-gradient(120deg, #378ADD40 0%, #222222 70%)' }}
+      >
+        <div className="choice-glow pointer-events-none absolute -top-20 -left-10 w-64 h-64 rounded-full blur-3xl" style={{ background: '#378ADD' }} />
+        <div className="relative">
+          <span className="inline-block rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white mb-3" style={{ background: '#378ADD' }}>
+            Competitor
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight mb-1">What do you need?</h1>
+          <p className="text-white/55 text-sm">Find a rally, or open your crew's pack.</p>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="flex flex-col gap-3">
         <ChoiceTile
+          layout="row"
           index={0}
           cta="View rallies"
           to="/calendar"
-          color="#E24B4A"
+          color="#378ADD"
           label="Rally info"
           sub="Rally calendar and official event information. Open a rally with the code from its organisers."
           icon={
@@ -43,6 +56,7 @@ export default function CompetitorPage() {
           }
         />
         <ChoiceTile
+          layout="row"
           index={1}
           cta="Open pack"
           href={LOGISTICS_URL}
