@@ -9,11 +9,11 @@ export default function ChoicePage() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-10 sm:py-16">
       <div className="choice-hero mb-8 sm:mb-10 text-center sm:text-left">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#FF9641] mb-3">RallyHQ</p>
-        <h1 className="text-3xl sm:text-5xl font-bold text-white tracking-tight leading-[1.05] mb-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C2570C] mb-3">RallyHQ</p>
+        <h1 className="text-3xl sm:text-5xl font-bold text-slate-900 tracking-tight leading-[1.05] mb-3">
           Choose your role
         </h1>
-        <p className="text-white/80 text-sm sm:text-base">How are you taking part?</p>
+        <p className="text-slate-600 text-sm sm:text-base">How are you taking part?</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
@@ -21,7 +21,7 @@ export default function ChoicePage() {
           index={0}
           cta="Organise"
           to="/organiser"
-          color="#E24B4A"
+          color="#D43F3E"
           label="Rally organiser"
           sub="Add your rallies, upload documents and keep event information up to date."
           icon={
@@ -36,7 +36,7 @@ export default function ChoicePage() {
           index={1}
           cta="Compete"
           to="/competitor"
-          color="#378ADD"
+          color="#2B72C6"
           label="Competitor"
           sub="Rally information from the organisers, and logistics for your crew."
           icon={

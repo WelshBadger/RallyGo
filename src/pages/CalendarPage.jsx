@@ -95,16 +95,16 @@ export default function CalendarPage() {
 
       {/* Banner in the Competitor blue, so the journey reads as one flow */}
       <div
-        className="relative overflow-hidden rounded-3xl border border-white/10 px-6 py-5 sm:px-8 sm:py-6 mb-5"
-        style={{ background: 'linear-gradient(120deg, #378ADD30 0%, #1f1f1f 70%)' }}
+        className="relative overflow-hidden rounded-3xl border border-[#2B72C638] bg-white px-6 py-5 sm:px-8 sm:py-6 mb-5"
+        style={{ background: 'linear-gradient(120deg, #2B72C626 0%, #ffffff 70%)' }}
       >
-        <div className="choice-glow pointer-events-none absolute -top-20 -left-10 w-64 h-64 rounded-full blur-3xl" style={{ background: '#378ADD' }} />
+        <div className="choice-glow pointer-events-none absolute -top-20 -left-10 w-64 h-64 rounded-full blur-3xl" style={{ background: '#2B72C6' }} />
         <div className="relative">
-          <span className="inline-block rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] mb-3" style={{ background: '#378ADD', color: '#0f0f0f' }}>
+          <span className="inline-block rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] mb-3" style={{ background: '#2B72C6', color: '#ffffff' }}>
             Rally info
           </span>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-tight mb-1">UK rally calendar</h1>
-          <p className="text-white/85 text-sm">{loading ? '…' : `${confirmedCount} confirmed events`}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight mb-1">UK rally calendar</h1>
+          <p className="text-slate-600 text-sm">{loading ? '…' : `${confirmedCount} confirmed events`}</p>
         </div>
       </div>
 

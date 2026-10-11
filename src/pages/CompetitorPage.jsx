@@ -26,16 +26,16 @@ export default function CompetitorPage() {
 
       {/* Banner so this feels like a new place, not a repeat of the opening screen */}
       <div
-        className="relative overflow-hidden rounded-3xl border border-white/10 px-6 py-6 sm:px-8 sm:py-8 mb-5"
-        style={{ background: 'linear-gradient(120deg, #378ADD30 0%, #1f1f1f 70%)' }}
+        className="relative overflow-hidden rounded-3xl border border-[#2B72C638] bg-white px-6 py-6 sm:px-8 sm:py-8 mb-5"
+        style={{ background: 'linear-gradient(120deg, #2B72C626 0%, #ffffff 70%)' }}
       >
-        <div className="choice-glow pointer-events-none absolute -top-20 -left-10 w-64 h-64 rounded-full blur-3xl" style={{ background: '#378ADD' }} />
+        <div className="choice-glow pointer-events-none absolute -top-20 -left-10 w-64 h-64 rounded-full blur-3xl" style={{ background: '#2B72C6' }} />
         <div className="relative">
-          <span className="inline-block rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] mb-3" style={{ background: '#378ADD', color: '#0f0f0f' }}>
+          <span className="inline-block rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] mb-3" style={{ background: '#2B72C6', color: '#ffffff' }}>
             Competitor
           </span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight mb-1">What do you need?</h1>
-          <p className="text-white/85 text-sm">Find a rally, or open your crew's pack.</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-1">What do you need?</h1>
+          <p className="text-slate-600 text-sm">Find a rally, or open your crew's pack.</p>
         </div>
       </div>
 
@@ -45,7 +45,7 @@ export default function CompetitorPage() {
           index={0}
           cta="View rallies"
           to="/calendar"
-          color="#378ADD"
+          color="#2B72C6"
           label="Rally info"
           sub="Rally calendar and official event information. Open a rally with the code from its organisers."
           icon={
@@ -60,7 +60,7 @@ export default function CompetitorPage() {
           index={1}
           cta="Open pack"
           href={LOGISTICS_URL}
-          color="#1D9E75"
+          color="#14805F"
           label="Rally logistics"
           sub="Your crew's pack: fuel, recce, schedule, set-up and team chat. Sign in to open a rally."
           icon={
