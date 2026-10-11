@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { AnalyticsTab } from './AdminPage'
+import PageHero from '../components/PageHero'
 
 // Private reporting for the super admin: everything happening across RallyHQ and
 // Rally Logistics, from the admin_report() database function (admin-only).
@@ -53,15 +54,13 @@ export default function ReportsPage() {
   useEffect(() => { load() }, [load])
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex items-end justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-white mb-1">Reports</h1>
-          <p className="text-white/35 text-sm">
-            Everything happening across RallyHQ and Rally Logistics
-            {data?.generated_at && ` · updated ${new Date(data.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`}
-          </p>
-        </div>
+    <>
+    <PageHero
+      title="Reports"
+      sub={`Across RallyHQ and Rally Logistics${data?.generated_at ? ` · updated ${new Date(data.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}`}
+    />
+    <main className="max-w-5xl mx-auto px-4 py-6">
+      <div className="flex justify-end mb-4">
         <button onClick={load} disabled={loading} className="rl-btn-ghost text-xs flex-shrink-0">
           {loading ? 'Loading…' : 'Refresh'}
         </button>
@@ -96,6 +95,7 @@ export default function ReportsPage() {
         </>
       )}
     </main>
+    </>
   )
 }
 

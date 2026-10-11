@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BackButton from '../components/BackButton'
+import PageHero from '../components/PageHero'
 
 function fmtDate(str) {
   return new Date(str).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -39,11 +40,9 @@ export function NewsIndexPage() {
   const [latest, ...older] = posts
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />
-        <span className="text-rl-accent text-[11px] font-semibold uppercase tracking-widest">News &amp; Updates</span>
-      </div>
+    <>
+    <PageHero title="News" sub="Updates from RallyHQ" back={{ to: '/competitor', label: 'Back' }} />
+    <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
       {/* Latest — featured */}
       <Link to={`/news/${latest.id}`} className="block bg-white/3 border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all no-underline group">
@@ -85,6 +84,7 @@ export function NewsIndexPage() {
         </div>
       )}
     </main>
+    </>
   )
 }
 
@@ -118,10 +118,9 @@ export default function NewsPostPage() {
   )
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <BackButton to="/news" label="All news" />
-      </div>
+    <>
+    <PageHero title={post.title} back={{ to: '/news', label: 'All news' }} />
+    <main className="max-w-2xl mx-auto px-4 py-6">
 
       {post.image_url && (
         <div className="rounded-2xl overflow-hidden bg-black/20 mb-8 border border-white/8">
@@ -130,7 +129,6 @@ export default function NewsPostPage() {
       )}
 
       {post.published_at && <p className="text-white/30 text-xs mb-3">{fmtDate(post.published_at)}</p>}
-      <h1 className="text-white font-semibold text-2xl sm:text-3xl leading-snug mb-4">{post.title}</h1>
 
       {post.excerpt && (
         <p className="text-white/55 text-base leading-relaxed mb-6 border-l-2 border-rl-accent/40 pl-4">{post.excerpt}</p>
@@ -138,5 +136,6 @@ export default function NewsPostPage() {
 
       <div className="text-white/60 text-sm leading-relaxed whitespace-pre-wrap">{post.body}</div>
     </main>
+    </>
   )
 }

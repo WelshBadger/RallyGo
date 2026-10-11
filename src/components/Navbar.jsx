@@ -7,7 +7,7 @@ function Logo() {
   return (
     <Link to="/" className="flex items-center gap-2.5 no-underline group">
       <img src="/icons/logo-circle.png" alt="" width="28" height="28" className="w-7 h-7 flex-shrink-0" />
-      <span className="text-white font-semibold text-base tracking-tight">
+      <span className="display text-white text-xl" style={{ lineHeight: 1 }}>
         Rally<span className="text-rl-accent">HQ</span>
       </span>
     </Link>

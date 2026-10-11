@@ -6,6 +6,7 @@ import BackButton from '../components/BackButton'
 import { useAuth } from '../context/AuthContext'
 import { CodePrompt } from '../components/RallyCodeGate'
 import { checkRallyCode, storeCode } from '../lib/rallyAccess'
+import PageHero from '../components/PageHero'
 
 const SURFACE = {
   gravel:      { bg: 'bg-amber-500',  light: 'bg-amber-500/15',  border: 'border-amber-500/40',  text: 'text-amber-300',  dot: 'bg-amber-400',  label: 'Gravel' },
@@ -96,12 +97,9 @@ export default function CalendarEventPage() {
   const countdown = daysUntil(event.date)
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
-
-      {/* Back */}
-      <div className="mb-8">
-        <BackButton to="/calendar" label="Calendar" />
-      </div>
+    <>
+    <PageHero title={event.name} sub={formatDateRange(event.date, event.end_date)} back={{ to: '/calendar', label: 'Calendar' }} />
+    <main className="max-w-2xl mx-auto px-4 py-6">
 
       {/* Card */}
       <div className="bg-white/3 border border-white/10 rounded-2xl overflow-hidden">
@@ -129,10 +127,6 @@ export default function CalendarEventPage() {
             )}
           </div>
 
-          {/* Title */}
-          <h1 className={`text-2xl sm:text-3xl font-semibold leading-tight mb-2 ${isCancelled ? 'line-through text-white/30' : 'text-white'}`}>
-            {event.name}
-          </h1>
 
           {/* Date + location */}
           <p className="text-white/45 text-base mb-8">
@@ -171,5 +165,6 @@ export default function CalendarEventPage() {
         </div>
       </div>
     </main>
+    </>
   )
 }
