@@ -11,7 +11,9 @@ const BackIcon = () => (
 export default function PageHero({ title, sub, back, action }) {
   return (
     <div className="hero-orange">
-      {back && <Link to={back.to} className="back"><BackIcon /> {back.label}</Link>}
+      {back && (back.onClick
+        ? <button type="button" onClick={back.onClick} className="back" style={{ border: 0, cursor: 'pointer', font: 'inherit', fontWeight: 700, fontSize: 14 }}><BackIcon /> {back.label}</button>
+        : <Link to={back.to} className="back"><BackIcon /> {back.label}</Link>)}
       <h1 className={`display ${title.length > 12 ? 'long' : ''}`}>{title}</h1>
       {sub && <p>{sub}</p>}
       {action && <Link to={action.to} className="hero-cta">{action.label}</Link>}

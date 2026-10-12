@@ -571,7 +571,13 @@ export default function PackPage() {
 
   return (
     <>
-    <PageHero title={rally.name} sub={[fmt(rally.date) + (rally.end_date && rally.end_date !== rally.date ? ` – ${fmt(rally.end_date)}` : ''), rally.location].filter(Boolean).join(' · ')} back={{ to: '/', label: 'All events' }} />
+    {(() => {
+      const sec = tab ? SECTIONS.find(x => x.id === tab) : null
+      const dates = [fmt(rally.date) + (rally.end_date && rally.end_date !== rally.date ? ` – ${fmt(rally.end_date)}` : ''), rally.location].filter(Boolean).join(' · ')
+      return sec
+        ? <PageHero title={sec.label} sub={rally.name} back={{ onClick: () => { setTab(null); setSchedView(null) }, label: 'Overview' }} />
+        : <PageHero title={rally.name} sub={dates} back={{ to: '/', label: 'All events' }} />
+    })()}
     <main className="max-w-3xl mx-auto px-4 py-6">
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
@@ -771,19 +777,7 @@ export default function PackPage() {
       {/* Section view */}
       {tab && (
         <>
-<BackBar label="Back to overview" sublabel={rally.name} onClick={() => { setTab(null); setSchedView(null) }} />
-          {(() => {
-            const s = SECTIONS.find(x => x.id === tab)
-            return s ? (
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: s.color + '20', color: s.color }}>
-                  <div className="w-5 h-5 [&>svg]:w-5 [&>svg]:h-5">{s.icon}</div>
-                </div>
-                <h2 className="text-white font-semibold text-lg">{s.label}</h2>
-              </div>
-            ) : null
-          })()}
+
           {tab === 'team-chat'     && <TeamChatTab rallyId={rallyId} user={user} rallyName={rally?.name} />}
           {tab === 'results'       && <ResultsTab pack={pack} onSave={save} />}
           {tab === 'entry-list'    && <EntryListTab entries={rally?.entry_list_data || []} carNumber={carNumber} />}
