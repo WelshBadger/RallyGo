@@ -6,6 +6,7 @@ import TileGrid from '../components/TileGrid'
 import BulletinFeed from '../components/BulletinFeed'
 import { formatDateRange } from '../lib/dateUtils'
 import BackButton from '../components/BackButton'
+import PageHero from '../components/PageHero'
 import WeatherPanel from '../components/WeatherPanel'
 import { LOGISTICS_URL } from '../lib/config'
 import { getStoredCode } from '../lib/rallyAccess'
@@ -201,16 +202,15 @@ export default function EventPage() {
   const shows = key => !hidden.includes(key)
 
   return (
+    <>
+    <PageHero
+      title={rally.name}
+      sub={[formatDateRange(rally.date, rally.end_date), rally.location].filter(Boolean).join(' · ')}
+      back={{ to: '/calendar', label: 'Calendar' }}
+    />
     <main className="max-w-4xl mx-auto px-4 py-0">
-      {/* Dark event header */}
-      <div className="bg-white -mx-4 px-4 sm:px-6 pt-6 pb-0 mb-6 sm:rounded-b-2xl border-b border-white/8">
-        {/* Back */}
-        <div className="mb-4">
-          <BackButton to="/calendar" label="Calendar" />
-        </div>
-
-        {/* Meta */}
-        <div className="flex items-center gap-2 mb-2">
+      <div className="px-0 pt-2 pb-0 mb-6">
+        <div className="flex items-center gap-2 mb-3">
           {!isPast && (
             <span className="flex items-center gap-1.5 text-[11px] font-semibold text-rl-accent bg-rl-accent/10 px-2.5 py-1 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-rl-accent animate-pulse" />
@@ -221,26 +221,11 @@ export default function EventPage() {
             <span className="text-white/35 text-xs">{rally.series}</span>
           )}
         </div>
-
-        {/* Logo */}
         {rally.logo_url && (
           <div className="mb-3">
-            <img
-              src={rally.logo_url}
-              alt=""
-              className="h-12 w-auto object-contain opacity-90"
-            />
+            <img src={rally.logo_url} alt="" className="h-12 w-auto object-contain opacity-90" />
           </div>
         )}
-
-        {/* Name */}
-        <h1 className="text-2xl sm:text-3xl font-medium text-white mb-2">{rally.name}</h1>
-
-        {/* Date & location */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/45 text-sm mb-5">
-          <span>{formatDateRange(rally.date, rally.end_date)}</span>
-          <span>{rally.location}</span>
-        </div>
 
         {/* Organiser controls */}
         {user && (isSuperAdmin || rally.organiser_id === user.id) && (
@@ -479,5 +464,6 @@ export default function EventPage() {
         <BulletinFeed rallyId={rallyId} limit={3} />
       </section>}
     </main>
+    </>
   )
 }

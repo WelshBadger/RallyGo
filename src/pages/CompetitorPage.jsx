@@ -2,13 +2,18 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { LOGISTICS_URL } from '../lib/config'
-import BackButton from '../components/BackButton'
-import ChoiceTile from '../components/ChoiceTile'
 
-const iconProps = {
-  viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.75,
-  strokeLinecap: 'round', strokeLinejoin: 'round', className: 'w-6 h-6',
-}
+const Arrow = () => (
+  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M7 17L17 7M8 7h9v9" />
+  </svg>
+)
+
+const Back = () => (
+  <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+    <path fillRule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z" clipRule="evenodd" />
+  </svg>
+)
 
 export default function CompetitorPage() {
   const [showNews, setShowNews] = useState(false)
@@ -19,46 +24,30 @@ export default function CompetitorPage() {
   }, [])
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
-      <div className="mb-5">
-        <BackButton to="/" label="Back" />
+    <main>
+      {/* Lands on the orange you just tapped, so it reads as the next step in one journey */}
+      <div className="hero-orange">
+        <Link to="/" className="back"><Back /> Back</Link>
+        <h1 className="display">Competitor</h1>
+        <p>Find a rally, or open your crew's pack.</p>
       </div>
 
-      <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-1">Competitor</h1>
-      <p className="text-white/40 text-sm mb-7">What do you need?</p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <ChoiceTile
-          to="/calendar"
-          color="#E24B4A"
-          label="Rally info"
-          sub="Rally calendar and official event information. Open a rally with the code from its organisers."
-          icon={
-            <svg {...iconProps}>
-              <rect x="3" y="4" width="18" height="17" rx="2" />
-              <path d="M3 9h18M8 2v4M16 2v4" />
-            </svg>
-          }
-        />
-        <ChoiceTile
-          href={LOGISTICS_URL}
-          color="#1D9E75"
-          label="Rally logistics"
-          sub="Your crew's pack: fuel, recce, schedule, set-up and team chat. Sign in to open a rally."
-          icon={
-            <svg {...iconProps}>
-              <path d="M1 3h15v13H1z" />
-              <path d="M16 8h4l3 3v5h-7z" />
-              <circle cx="5.5" cy="18.5" r="2.5" />
-              <circle cx="18.5" cy="18.5" r="2.5" />
-            </svg>
-          }
-        />
+      <div className="row-stack">
+        <Link to="/calendar" className="row-slab">
+          <p className="display">Rally info</p>
+          <p>The rally calendar and official event information. Open a rally with the code from its organisers.</p>
+          <span className="slab-go"><Arrow /></span>
+        </Link>
+        <a href={LOGISTICS_URL} className="row-slab">
+          <p className="display">Rally logistics</p>
+          <p>Your crew's pack: fuel, recce, schedule, set-up and team chat. Sign in to open a rally.</p>
+          <span className="slab-go"><Arrow /></span>
+        </a>
       </div>
 
       {showNews && (
-        <Link to="/news" className="inline-block mt-6 text-white/40 hover:text-white text-sm transition-colors no-underline">
-          Latest news →
+        <Link to="/news" className="inline-block m-6 text-sm font-semibold no-underline" style={{ color: '#2b2b2b' }}>
+          Latest news
         </Link>
       )}
     </main>

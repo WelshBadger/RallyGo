@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatDateRange } from '../lib/dateUtils'
 import { getStoredCode } from '../lib/rallyAccess'
-import BackButton from '../components/BackButton'
 
 const SURFACE = {
   gravel:     { bg: 'bg-amber-500',   light: 'bg-amber-500/15',  border: 'border-amber-500/40',  text: 'text-amber-300',   dot: 'bg-amber-400',   label: 'Gravel Rally' },
@@ -89,13 +88,10 @@ export default function CalendarPage() {
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 sm:py-10">
 
-      <div className="mb-5">
-        <BackButton to="/competitor" label="Back" />
-      </div>
-
-      <div className="mb-5">
-        <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-0.5">Rally info</h1>
-        <p className="text-white/35 text-sm">{loading ? '…' : `UK rally calendar · ${confirmedCount} confirmed events`}</p>
+      <div className="hero-orange -mx-4 -mt-8 sm:-mt-10 mb-5">
+        <Link to="/competitor" className="back"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z" clipRule="evenodd" /></svg> Back</Link>
+        <h1 className="display">Rally info</h1>
+        <p>{loading ? '…' : `UK rally calendar, ${confirmedCount} confirmed events`}</p>
       </div>
 
       {/* Championship filter chips */}
@@ -106,7 +102,7 @@ export default function CalendarPage() {
             className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
               champFilter === 'all'
                 ? 'bg-white text-black border-white'
-                : 'border-white/15 text-white/50 hover:text-white hover:border-white/30'
+                : 'border-white/15 text-white/75 hover:text-white hover:border-white/30'
             }`}
           >
             All events
@@ -120,7 +116,7 @@ export default function CalendarPage() {
                 className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
                   active
                     ? 'border-transparent'
-                    : 'border-white/15 text-white/50 hover:text-white hover:border-white/30'
+                    : 'border-white/15 text-white/75 hover:text-white hover:border-white/30'
                 }`}
                 style={active ? { backgroundColor: c.color || '#E24B4A', borderColor: c.color || '#E24B4A', color: '#fff' } : {}}
               >
@@ -152,7 +148,7 @@ export default function CalendarPage() {
             {['gravel', 'tarmac', 'road_rally'].map(key => {
               const s = SURFACE[key]
               return (
-                <span key={key} className="flex items-center gap-1.5 text-xs text-white/35">
+                <span key={key} className="flex items-center gap-1.5 text-xs text-white/65">
                   <span className={`w-2 h-2 rounded-full ${s.dot}`} />
                   {s.label}
                 </span>
@@ -176,7 +172,7 @@ export default function CalendarPage() {
           </div>
 
           {listEvents.length === 0 ? (
-            <p className="text-white/35 text-sm py-6 text-center">No rallies {selectedDay ? 'on this day' : 'this month'}.</p>
+            <p className="text-white/65 text-sm py-6 text-center">No rallies {selectedDay ? 'on this day' : 'this month'}.</p>
           ) : (
             <div className="grid grid-cols-1 gap-3">
               {listEvents.map(event => <ListCard key={event.id} event={event} isUpNext={event.id === nextEventId} />)}
@@ -210,7 +206,7 @@ function MonthGrid({ days, events, year, month, todayStr, selectedDay, onSelectD
       <div className="px-2 pb-2">
         <div className="grid grid-cols-7">
           {DAY_HEADERS.map(d => (
-            <div key={d} className="py-1.5 text-center text-[10px] font-medium text-white/25 uppercase tracking-wider">{d}</div>
+            <div key={d} className="py-1.5 text-center text-[10px] font-medium text-white/50 uppercase tracking-wider">{d}</div>
           ))}
         </div>
 
@@ -234,7 +230,7 @@ function MonthGrid({ days, events, year, month, todayStr, selectedDay, onSelectD
                 <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs ${
                   isToday ? 'bg-rl-accent text-white font-semibold'
                   : hasEvents ? 'text-white font-semibold'
-                  : 'text-white/35'
+                  : 'text-white/65'
                 }`}>
                   {Number(day.slice(8))}
                 </span>
@@ -281,7 +277,7 @@ function ListCard({ event, isUpNext }) {
               <span className={`w-1 h-1 rounded-full ${surf.dot}`} />{surf.label}
             </span>
             {event.series?.filter(Boolean).map(s => (
-              <span key={s} className="text-[10px] text-white/35 bg-white/5 border border-white/8 px-2 py-0.5 rounded-full">{s}</span>
+              <span key={s} className="text-[10px] text-white/65 bg-white/5 border border-white/8 px-2 py-0.5 rounded-full">{s}</span>
             ))}
           </div>
           {isCancelled
@@ -289,7 +285,7 @@ function ListCard({ event, isUpNext }) {
             : <span className="flex-shrink-0 text-[10px] font-semibold text-rl-accent bg-rl-accent/10 border border-rl-accent/20 px-2 py-0.5 rounded-full">{isUnlocked ? 'Open ›' : 'Code required'}</span>}
         </div>
         <h3 className={`font-semibold text-[15px] leading-snug mb-1.5 ${isCancelled ? 'line-through text-white/30' : 'text-white'}`}>{event.name}</h3>
-        <p className="text-white/35 text-xs">
+        <p className="text-white/65 text-xs">
           {formatDateRange(event.date, event.end_date)}
           {event.location && <><span className="text-white/15 mx-1.5">·</span>{event.location}</>}
         </p>

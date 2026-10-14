@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatDateRange } from '../lib/dateUtils'
 import toast from 'react-hot-toast'
+import PageHero from '../components/PageHero'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -36,11 +37,9 @@ export default function AdminPage() {
   const [tab, setTab] = useState('news')
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-white mb-1">Admin</h1>
-        <p className="text-white/35 text-sm">Manage all content on RallyHQ</p>
-      </div>
+    <>
+    <PageHero title="Admin" sub="Manage all content on RallyHQ" />
+    <main className="max-w-5xl mx-auto px-4 py-6">
 
       {/* Tab bar */}
       <div className="flex gap-1 bg-white/4 rounded-xl p-1 mb-8 overflow-x-auto">
@@ -63,6 +62,7 @@ export default function AdminPage() {
       {tab === 'rallies'       && <RalliesTab />}
       {tab === 'analytics'     && <AnalyticsTab />}
     </main>
+    </>
   )
 }
 

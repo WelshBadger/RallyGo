@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatDateRange } from '../lib/dateUtils'
+import PageHero from '../components/PageHero'
 
 const STATUS_STYLES = {
   draft: 'bg-white/8 text-white/40',
@@ -29,17 +30,13 @@ export default function OrganizerDashboard() {
   }, [user])
 
   return (
+    <>
+    <PageHero
+      title="Organiser dashboard"
+      sub={`Welcome back, ${profile?.full_name || user.email}`}
+      action={{ to: '/organiser/create', label: 'New event' }}
+    />
     <main className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-medium text-white mb-1">Organiser dashboard</h1>
-          <p className="text-white/40 text-sm">Welcome back, {profile?.full_name || user.email}</p>
-        </div>
-        <Link to="/organiser/create" className="rl-btn-primary">
-          + New event
-        </Link>
-      </div>
-
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-8">
         {[
@@ -89,5 +86,6 @@ export default function OrganizerDashboard() {
         </div>
       )}
     </main>
+    </>
   )
 }

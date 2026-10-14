@@ -4,6 +4,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 
+import PageHero from '../components/PageHero'
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -28,22 +30,15 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+    <>
+    <PageHero back={{ to: '/', label: 'Back' }} title="Organiser sign in" sub="Sign in to add and manage your rallies." />
+    <main className="flex justify-center px-4 py-8">
       <div className="w-full max-w-sm">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 mb-8 no-underline">
-          <img src="/icons/logo-circle.png" alt="" width="28" height="28" className="w-7 h-7" />
-          <span className="text-white font-medium">RallyHQ</span>
-        </Link>
-
         {/* Sign in / Register */}
         <div className="grid grid-cols-2 gap-1 p-1 bg-white/5 rounded-xl mb-6">
           <Link to="/login" state={location.state} className={`py-2 rounded-lg text-sm font-medium text-center no-underline transition-all ${true ? 'bg-rl-accent text-white' : 'text-white/50 hover:text-white'}`}>Sign in</Link>
           <Link to="/register" state={location.state} className={`py-2 rounded-lg text-sm font-medium text-center no-underline transition-all ${false ? 'bg-rl-accent text-white' : 'text-white/50 hover:text-white'}`}>Register</Link>
         </div>
-
-        <h1 className="text-2xl font-medium text-white mb-1">Organiser sign in</h1>
-        <p className="text-white/40 text-sm mb-7">Sign in to add and manage your rallies.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -86,5 +81,6 @@ export default function LoginPage() {
         </form>
       </div>
     </main>
+    </>
   )
 }

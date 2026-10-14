@@ -9,7 +9,7 @@ export default function Navbar() {
         <Link to="/" className="flex items-center gap-2.5 no-underline">
           <img src="/icons/logo-circle.png" alt="" width="28" height="28" className="w-7 h-7 flex-shrink-0" />
           <div>
-            <span className="font-semibold text-sm leading-none" style={{ color: '#fff' }}>Rally Logistics</span>
+            <span className="display text-base" style={{ color: '#fff', lineHeight: 1 }} >Rally Logistics</span>
             <p className="text-white/30 text-[10px] leading-none mt-0.5">by RallyHQ</p>
           </div>
         </Link>

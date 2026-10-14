@@ -8,6 +8,7 @@ import RouteMap from '../components/RouteMap'
 import { PacenotesTab, StagePacenotes, RecceVideos } from '../components/RecceMedia'
 import { reencodeImage } from '../lib/images'
 import { stageMapFor } from '../lib/stageMaps'
+import PageHero from '../components/PageHero'
 
 // Route map files: a labelled list (e.g. one KMZ per day). Older rallies only have route_kmz_url.
 const routeFilesOf = r => (Array.isArray(r?.route_kmz_files) && r.route_kmz_files.length)
@@ -569,9 +570,16 @@ export default function PackPage() {
             .map(f => ({ number: f.stage, name: f.name, distance: f.distance })) || []))
 
   return (
+    <>
+    {(() => {
+      const sec = tab ? SECTIONS.find(x => x.id === tab) : null
+      const dates = [fmt(rally.date) + (rally.end_date && rally.end_date !== rally.date ? ` – ${fmt(rally.end_date)}` : ''), rally.location].filter(Boolean).join(' · ')
+      return sec
+        ? <PageHero title={sec.label} sub={rally.name} back={{ onClick: () => { setTab(null); setSchedView(null) }, label: 'Overview' }} />
+        : <PageHero title={rally.name} sub={dates} back={{ to: '/', label: 'All events' }} />
+    })()}
     <main className="max-w-3xl mx-auto px-4 py-6">
       <div className="mb-6">
-<BackBar label="All events" to="/" />
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
           <div className="flex items-start gap-3 min-w-0">
             {rally.logo_url && (
@@ -579,8 +587,6 @@ export default function PackPage() {
             )}
             <div className="min-w-0">
               {rally.series && <p className="text-white/30 text-xs mb-1">{rally.series}</p>}
-              <h1 className="text-xl font-semibold text-white">{rally.name}</h1>
-              <p className="text-white/40 text-sm mt-0.5">{fmt(rally.date)}{rally.end_date && rally.end_date !== rally.date ? ` – ${fmt(rally.end_date)}` : ''}{rally.location && ` · ${rally.location}`}</p>
             </div>
           </div>
           <div className="flex flex-row flex-wrap items-center sm:flex-col sm:items-end gap-2 flex-shrink-0">
@@ -771,19 +777,7 @@ export default function PackPage() {
       {/* Section view */}
       {tab && (
         <>
-<BackBar label="Back to overview" sublabel={rally.name} onClick={() => { setTab(null); setSchedView(null) }} />
-          {(() => {
-            const s = SECTIONS.find(x => x.id === tab)
-            return s ? (
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: s.color + '20', color: s.color }}>
-                  <div className="w-5 h-5 [&>svg]:w-5 [&>svg]:h-5">{s.icon}</div>
-                </div>
-                <h2 className="text-white font-semibold text-lg">{s.label}</h2>
-              </div>
-            ) : null
-          })()}
+
           {tab === 'team-chat'     && <TeamChatTab rallyId={rallyId} user={user} rallyName={rally?.name} />}
           {tab === 'results'       && <ResultsTab pack={pack} onSave={save} />}
           {tab === 'entry-list'    && <EntryListTab entries={rally?.entry_list_data || []} carNumber={carNumber} />}
@@ -805,6 +799,7 @@ export default function PackPage() {
         </>
       )}
     </main>
+    </>
   )
 }
 

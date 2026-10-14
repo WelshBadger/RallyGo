@@ -6,6 +6,7 @@ import BackButton from '../components/BackButton'
 import RouteMap from '../components/RouteMap'
 import { stageMapFor } from '../lib/stageMaps'
 import { sectionDocsQuery, rallyQuery } from '../lib/sectionData'
+import PageHero from '../components/PageHero'
 
 const SECTION_META = {
   'documents':  { label: 'Documents',               color: '#6366f1' },
@@ -66,17 +67,9 @@ export default function SectionPage() {
   }
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-5 sm:py-6">
-      {/* Back */}
-      <div className="mb-5">
-        <BackButton to={`/event/${rallyId}`} label={rally?.name || 'Event'} />
-      </div>
-
-      {/* Section header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-1 h-7 rounded-full" style={{ background: meta.color }} />
-        <h1 className="text-xl font-medium text-white">{meta.label}</h1>
-      </div>
+    <>
+    <PageHero title={meta.label} sub={rally?.name} back={{ to: `/event/${rallyId}`, label: rally?.name || 'Event' }} />
+    <main className="max-w-3xl mx-auto px-4 py-6">
 
       {/* Route map: the organiser's KMZ / KML files */}
       {!loading && section === 'route-map' && rally && <RouteMap rally={rally} />}
@@ -544,6 +537,7 @@ export default function SectionPage() {
         </div>
       ) : null}
     </main>
+    </>
   )
 }
 

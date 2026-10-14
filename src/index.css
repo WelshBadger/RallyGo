@@ -41,7 +41,7 @@
 
 .navbar-shimmer {
   animation: navbar-shimmer 4s ease-in-out infinite;
-  background: linear-gradient(90deg, transparent 0%, #E24B4A 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, #FF9641 50%, transparent 100%);
   width: 40%;
   height: 100%;
 }
@@ -50,13 +50,131 @@
   animation: navbar-glow-pulse 3s ease-in-out infinite;
 }
 
+/* Page and section headings use the display face app-wide */
+h1, h2 {
+  font-family: 'Bricolage Grotesque Variable', Inter, system-ui, sans-serif !important;
+  font-stretch: 75% !important;
+  letter-spacing: -0.03em;
+}
+h1 { font-weight: 800 !important; }
+h2 { font-weight: 700; }
+
+/* ---------------------------------------------------------------------------
+   Slabs: the opening / role-choice screens. Two flat colour blocks cut on the
+   same angle as the R logo. Own colours throughout (the app's light-theme
+   overrides remap text-white etc., so these use explicit hex values).
+   ------------------------------------------------------------------------- */
+:root { --carbon: #2b2b2b; --orange: #ff9641; --cut: 44px; }
+
+.display {
+  font-family: 'Bricolage Grotesque Variable', Inter, system-ui, sans-serif;
+  font-weight: 800;
+  font-stretch: 75%;
+  letter-spacing: -0.035em;
+  line-height: 0.9;
+}
+
+.slab-page { display: flex; flex-direction: column; min-height: calc(100dvh - 60px - var(--safe-top, 0px)); }
+.slab-title { padding: 22px 24px 20px; }
+.slab-title h1 { font-size: clamp(1.9rem, 8vw, 2.6rem); color: var(--carbon); margin: 0 0 6px; }
+.slab-title p { margin: 0; color: #5b5b5b; font-size: 15px; }
+
+.slab-stack { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 460px; }
+
+.slab {
+  position: relative; display: flex; flex-direction: column; justify-content: flex-end;
+  flex: 1 1 0; padding: 24px 24px 26px; overflow: hidden; text-decoration: none;
+  transition: flex-grow 0.42s cubic-bezier(0.7, 0, 0.2, 1), opacity 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.slab-organiser { background: var(--carbon); color: var(--orange); z-index: 2;
+  justify-content: flex-start; padding-top: 30px; padding-bottom: calc(26px + var(--cut));
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), 0 100%); }
+.slab-competitor { background: var(--orange); color: var(--carbon);
+  margin-top: calc(var(--cut) * -1); padding-top: calc(24px + var(--cut));
+  clip-path: polygon(0 var(--cut), 100% 0, 100% 100%, 0 100%); }
+
+.slab-word { font-size: clamp(3.1rem, 19vw, 7.5rem); margin: 0 0 12px; position: relative; }
+.slab-line { position: relative; margin: 0; max-width: 25ch; font-size: 15px; line-height: 1.35; font-weight: 500; }
+.slab-organiser .slab-line { color: #f1f1f1; }
+.slab-competitor .slab-line { color: var(--carbon); }
+
+.slab-go {
+  position: absolute; right: 22px; bottom: 26px; width: 58px; height: 58px; border-radius: 999px;
+  display: grid; place-items: center; transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.slab-organiser .slab-go { bottom: calc(26px + var(--cut)); background: var(--orange); color: var(--carbon); }
+.slab-competitor .slab-go { background: var(--carbon); color: var(--orange); }
+.slab:hover .slab-go, .slab:focus-visible .slab-go { transform: translate(4px, -4px); }
+.slab:focus-visible { outline: 4px solid #fff; outline-offset: -10px; }
+
+/* faint stage-route line behind the type */
+.slab-route { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.slab-route path { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; opacity: 0.22; }
+.slab-route circle { fill: currentColor; opacity: 0.4; }
+
+/* the one moment: slabs launch in, route lines draw, then everything is still */
+@keyframes slab-in-left  { from { transform: translateX(-104%); } to { transform: none; } }
+@keyframes slab-in-right { from { transform: translateX(104%); }  to { transform: none; } }
+@keyframes route-draw    { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.slab-organiser  { animation: slab-in-left 0.7s cubic-bezier(0.2, 0.9, 0.1, 1) both; }
+.slab-competitor { animation: slab-in-right 0.7s 0.12s cubic-bezier(0.2, 0.9, 0.1, 1) both; }
+.slab-route path { stroke-dasharray: 1; stroke-dashoffset: 0; animation: route-draw 1.6s 0.3s ease-out both; }
+
+/* tap: the chosen slab swallows the screen before the next page opens */
+.slab-stack.is-leaving .slab { flex-grow: 0.0001; opacity: 0; }
+.slab-stack.is-leaving .slab.is-chosen { flex-grow: 40; opacity: 1; }
+
+@media (min-width: 768px) {
+  .slab-stack { flex-direction: row; min-height: 560px; }
+  .slab-organiser { padding-bottom: 28px; padding-right: calc(28px + var(--cut));
+    clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
+    animation-name: slab-in-left; }
+  .slab-competitor { margin-top: 0; margin-left: calc(var(--cut) * -1); padding-top: 24px; padding-left: calc(28px + var(--cut));
+    clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%); }
+  .slab-organiser .slab-go { bottom: 28px; right: calc(26px + var(--cut)); }
+  .slab-competitor .slab-go { bottom: 28px; }
+}
+
+/* second-level screens: orange hero + dark rows, same angle */
+.hero-orange { position: relative; background: var(--orange); color: var(--carbon); padding: 20px 24px calc(30px + var(--cut)); z-index: 3;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), 0 100%); }
+.hero-orange .display { font-size: clamp(3rem, 17vw, 6.5rem); margin: 18px 0 10px; }
+.hero-orange > .display:first-child { margin-top: 6px; }
+.hero-orange .display.long { font-size: clamp(2.3rem, 11.5vw, 4.4rem); line-height: 0.95; }
+.hero-orange .hero-cta { display: inline-block; margin-top: 18px; padding: 12px 22px; border-radius: 999px; background: var(--carbon); color: var(--orange); font-weight: 800; font-size: 15px; text-decoration: none; }
+.hero-orange .hero-cta:active { transform: scale(0.97); }
+.hero-orange p { margin: 0; font-size: 17px; font-weight: 600; max-width: 28ch; }
+.hero-orange .back { display: inline-flex; align-items: center; gap: 8px; color: var(--carbon); text-decoration: none; font-weight: 700; font-size: 14px;
+  padding: 8px 14px 8px 10px; border-radius: 999px; background: rgba(43, 43, 43, 0.12); }
+
+.row-stack { display: flex; flex-direction: column; }
+.row-slab { position: relative; display: block; text-decoration: none; background: var(--carbon); color: var(--orange);
+  padding: calc(26px + var(--cut)) 24px calc(26px + var(--cut)); margin-top: calc(var(--cut) * -1);
+  clip-path: polygon(0 var(--cut), 100% 0, 100% calc(100% - var(--cut)), 0 100%); }
+.row-slab:first-child { z-index: 2; }
+.row-slab:last-child { padding-bottom: 30px; clip-path: polygon(0 var(--cut), 100% 0, 100% 100%, 0 100%); }
+.row-slab + .row-slab { background: #1d1d1d; }
+.row-slab .display { font-size: clamp(2.2rem, 11vw, 3.6rem); margin: 0 0 8px; color: var(--orange); }
+.row-slab p:not(.display) { margin: 0; max-width: 30ch; padding-right: 76px; color: #ececec; font-size: 15px; line-height: 1.4; }
+.row-slab .slab-go { background: var(--orange); color: var(--carbon); right: 22px; bottom: calc(26px + var(--cut)); }
+.row-slab:last-child .slab-go { bottom: 30px; }
+.row-slab:hover .slab-go, .row-slab:focus-visible .slab-go { transform: translate(4px, -4px); }
+.row-slab:focus-visible { outline: 4px solid var(--orange); outline-offset: -10px; }
+@media (min-width: 768px) { .row-stack, .hero-orange { max-width: 880px; margin-left: auto; margin-right: auto; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .slab-organiser, .slab-competitor, .slab-route path { animation: none; }
+  .slab, .slab-go { transition: none; }
+}
+
 @layer components {
   .rl-card {
     @apply bg-rl-card border border-white/10 rounded-xl;
   }
 
   .rl-btn-primary {
-    @apply bg-rl-accent hover:bg-rl-accent-hover text-white font-medium px-5 py-2.5 rounded-lg transition-colors duration-150 text-sm;
+    @apply bg-rl-accent hover:bg-rl-accent-hover text-rl-carbon font-bold px-5 py-2.5 rounded-lg transition-colors duration-150 text-sm;
   }
 
   .rl-btn-ghost {
@@ -115,6 +233,9 @@
 .placeholder-white\/25::placeholder,
 .placeholder-white\/30::placeholder { color: #94a3b8 !important; }
 
-.bg-rl-accent.text-white { color: #ffffff !important; }
+.bg-rl-accent.text-white { color: #303030 !important; }
+/* orange as text on white needs to be deeper to stay readable */
+.text-rl-accent, .hover\:text-rl-accent:hover, .group:hover .group-hover\:text-rl-accent { color: #c2570c !important; }
+.bg-rl-accent .text-rl-accent { color: #303030 !important; }
 
 .bg-black\/90 .text-white, .bg-black\/80 .text-white, .bg-black\/70 .text-white, .bg-black\/60 .text-white { color: #ffffff !important; }

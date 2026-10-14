@@ -8,6 +8,7 @@ import SectionVisibilityCard from '../components/SectionVisibilityCard'
 import toast from 'react-hot-toast'
 import BackButton from '../components/BackButton'
 import { formatDistanceToNow } from '../lib/dateUtils'
+import PageHero from '../components/PageHero'
 
 const SECTIONS = [
   { key: 'documents',  label: 'Documents' },
@@ -693,18 +694,12 @@ export default function ManageEventPage() {
   if (!rally) return <div className="max-w-4xl mx-auto px-4 py-8"><div className="h-8 w-48 bg-white/5 rounded-lg animate-pulse" /></div>
 
   return (
+    <>
+    <PageHero title={rally.name} sub="Manage this event" back={{ to: '/organiser', label: 'Dashboard' }} />
     <main className="max-w-4xl mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="mb-5">
-        <BackButton to="/organiser" label="Dashboard" />
-      </div>
-
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <h1 className="text-xl font-medium text-white">{rally.name}</h1>
-        <div className="flex items-center gap-2">
-          <Link to={`/event/${rallyId}`} className="rl-btn-ghost text-xs">Preview ↗</Link>
-          <button onClick={handleDeleteEvent} className="text-xs text-red-400/60 hover:text-red-400 border border-red-400/20 hover:border-red-400/40 px-3 py-1.5 rounded-lg transition-all">Delete event</button>
-        </div>
+      <div className="flex items-center justify-end gap-2 mb-6">
+        <Link to={`/event/${rallyId}`} className="rl-btn-ghost text-xs">Preview ↗</Link>
+        <button onClick={handleDeleteEvent} className="text-xs text-red-400/60 hover:text-red-400 border border-red-400/20 hover:border-red-400/40 px-3 py-1.5 rounded-lg transition-all">Delete event</button>
       </div>
 
       <AccessCodeCard rallyId={rallyId} />
@@ -1484,5 +1479,6 @@ export default function ManageEventPage() {
         </div>
       </div>
     </main>
+    </>
   )
 }
