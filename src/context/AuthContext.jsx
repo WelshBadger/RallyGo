@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  async function signUp(email, password, fullName, role, carNumber) {
+  async function signUp(email, password, fullName, role, carNumber, marketing = false) {
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) throw error
 
@@ -50,6 +50,8 @@ export function AuthProvider({ children }) {
         full_name: fullName,
         role,
         car_number: carNumber || null,
+        marketing_consent: !!marketing,
+        marketing_consent_at: marketing ? new Date().toISOString() : null,
       })
       // The auth listener may have looked for the profile before it existed
       await fetchProfile(data.user.id)

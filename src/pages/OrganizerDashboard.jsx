@@ -51,6 +51,8 @@ export default function OrganizerDashboard() {
         ))}
       </div>
 
+      <EmailConsent />
+
       {/* Events list */}
       {loading ? (
         <div className="space-y-3">
@@ -87,5 +89,36 @@ export default function OrganizerDashboard() {
       )}
     </main>
     </>
+  )
+}
+
+// Organisers can opt in to / out of RallyHQ news emails
+function EmailConsent() {
+  const { user, profile } = useAuth()
+  const [on, setOn] = useState(!!profile?.marketing_consent)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { setOn(!!profile?.marketing_consent) }, [profile?.marketing_consent])
+  async function toggle() {
+    setBusy(true)
+    const next = !on
+    const { error } = await supabase.from('user_profiles')
+      .update({ marketing_consent: next, marketing_consent_at: next ? new Date().toISOString() : null }).eq('id', user.id)
+    if (!error) {
+      if (next) await supabase.rpc('marketing_resubscribe')
+      setOn(next)
+    }
+    setBusy(false)
+  }
+  return (
+    <div className="bg-rl-card border border-white/10 rounded-xl p-4 mb-8 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-white text-sm font-medium">News emails from RallyHQ</p>
+        <p className="text-white/40 text-xs mt-0.5">Occasional updates and offers. Unsubscribe any time.</p>
+      </div>
+      <button onClick={toggle} disabled={busy}
+        className={`flex-shrink-0 text-xs font-medium px-3 py-2 rounded-lg border transition-all ${on ? 'border-rl-accent/40 bg-rl-accent/10 text-rl-accent' : 'border-white/15 text-white/60 hover:text-white'}`}>
+        {busy ? '…' : on ? 'On' : 'Off'}
+      </button>
+    </div>
   )
 }

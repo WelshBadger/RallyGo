@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { LOGISTICS_URL } from '../lib/config'
+import NewsPushToggle from '../components/NewsPushToggle'
 
 const Arrow = () => (
   <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -43,6 +44,10 @@ export default function CompetitorPage() {
           <p>Your crew's pack: fuel, recce, schedule, set-up and team chat. Sign in to open a rally.</p>
           <span className="slab-go"><Arrow /></span>
         </a>
+      </div>
+
+      <div className="mx-6 mt-6">
+        <NewsPushToggle />
       </div>
 
       {showNews && (

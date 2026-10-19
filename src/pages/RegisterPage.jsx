@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import PageHero from '../components/PageHero'
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ fullName: '', email: '', password: '' })
+  const [form, setForm] = useState({ fullName: '', email: '', password: '', marketing: false })
   const [loading, setLoading] = useState(false)
   const { signUp } = useAuth()
   const navigate = useNavigate()
@@ -24,7 +24,7 @@ export default function RegisterPage() {
     }
     setLoading(true)
     try {
-      await signUp(form.email, form.password, form.fullName, 'organiser')
+      await signUp(form.email, form.password, form.fullName, 'organiser', null, form.marketing)
       toast.success('Account created!')
       navigate('/organiser', { replace: true })
     } catch (err) {
@@ -83,6 +83,12 @@ export default function RegisterPage() {
               className="rl-input"
             />
           </div>
+
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input type="checkbox" checked={form.marketing} onChange={e => setForm(f => ({ ...f, marketing: e.target.checked }))}
+              className="mt-0.5 w-4 h-4 accent-rl-accent flex-shrink-0" />
+            <span className="text-white/50 text-xs leading-snug">I'm happy to get occasional news and offers from RallyHQ by email. You can unsubscribe any time.</span>
+          </label>
 
           <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white/50">
             As an organiser, you'll be able to create events and upload documents. A per-event fee applies when publishing.

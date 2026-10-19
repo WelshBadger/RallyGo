@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import MarketingTab from '../components/MarketingTab'
 import { formatDateRange } from '../lib/dateUtils'
 import toast from 'react-hot-toast'
 import PageHero from '../components/PageHero'
@@ -19,6 +20,7 @@ const TABS = [
   { id: 'calendar',       label: 'Calendar Events' },
   { id: 'rallies',        label: 'Rallies' },
   { id: 'analytics',      label: 'Analytics' },
+  { id: 'marketing',      label: 'Marketing' },
 ]
 
 const SURFACE_OPTIONS = [
@@ -61,6 +63,7 @@ export default function AdminPage() {
       {tab === 'calendar'      && <CalendarTab />}
       {tab === 'rallies'       && <RalliesTab />}
       {tab === 'analytics'     && <AnalyticsTab />}
+      {tab === 'marketing'     && <MarketingTab />}
     </main>
     </>
   )

@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import NewsPushToggle from '../components/NewsPushToggle'
 
 export default function AccountPage() {
   const { user, signOut } = useAuth()
@@ -67,10 +70,48 @@ export default function AccountPage() {
         <p className="text-white/40 text-xs leading-relaxed">Full access for an entire season. Cancel any time.</p>
       </div>
 
+      {/* News from RallyHQ */}
+      <EmailConsent userId={user?.id} />
+      <NewsPushToggle />
+
       {/* Sign out */}
       <button onClick={handleSignOut} className="rl-btn-danger w-full justify-center">
         Sign out
       </button>
     </main>
+  )
+}
+
+function EmailConsent({ userId }) {
+  const [on, setOn] = useState(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    if (!userId) return
+    supabase.from('profiles').select('marketing_consent').eq('id', userId).maybeSingle()
+      .then(({ data }) => setOn(!!data?.marketing_consent))
+  }, [userId])
+  async function toggle() {
+    setBusy(true)
+    const next = !on
+    const { error } = await supabase.from('profiles')
+      .update({ marketing_consent: next, marketing_consent_at: next ? new Date().toISOString() : null }).eq('id', userId)
+    if (!error) {
+      if (next) await supabase.rpc('marketing_resubscribe')
+      setOn(next)
+    }
+    setBusy(false)
+  }
+  if (on === null) return null
+  return (
+    <div className="bg-rl-card border border-white/10 rounded-xl p-4 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-white text-sm font-medium">News emails from RallyHQ</p>
+        <p className="text-white/40 text-xs mt-0.5">Occasional updates and offers. Unsubscribe any time.</p>
+      </div>
+      <button onClick={toggle} disabled={busy}
+        className={`flex-shrink-0 text-xs font-medium px-3 py-2 rounded-lg border transition-all ${on ? 'border-rl-accent/40 bg-rl-accent/10 text-rl-accent' : 'border-white/15 text-white/60 hover:text-white'}`}>
+        {busy ? '…' : on ? 'On' : 'Off'}
+      </button>
+    </div>
   )
 }

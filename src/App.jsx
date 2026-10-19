@@ -17,6 +17,7 @@ import ManageEventPage from './pages/ManageEventPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import AdminPage from './pages/AdminPage'
 import ReportsPage from './pages/ReportsPage'
+import UnsubscribePage from './pages/UnsubscribePage'
 import NewsPostPage, { NewsIndexPage } from './pages/NewsPage'
 import NotFoundPage from './pages/NotFoundPage'
 
@@ -121,6 +122,7 @@ export default function App() {
         <Route path="/news" element={<NewsIndexPage />} />
         <Route path="/news/:id" element={<NewsPostPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
+        <Route path="/unsubscribe" element={<UnsubscribePage />} />
         <Route path="/organiser" element={
           <ProtectedOrganiser><OrganizerDashboard /></ProtectedOrganiser>
         } />
