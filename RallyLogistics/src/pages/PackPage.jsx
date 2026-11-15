@@ -3174,6 +3174,17 @@ const LOCATION_FIELDS = [
   { key: 'hospital',    label: 'Nearest hospital',      color: '#ef4444' },
 ]
 
+// Map extracted regulations fields onto location slots so HQ and the service
+// park appear automatically from the regs — no re-typing. Overlay only: these
+// are shown as suggestions and NEVER overwrite anything the crew has entered.
+function regsLocationHints(regs) {
+  const r = regs || {}
+  const hints = {}
+  if (r.rallyHQ)     hints.hq = String(r.rallyHQ).trim()
+  if (r.serviceArea) hints.servicepark = String(r.serviceArea).trim()
+  return hints
+}
+
 // Old format stored one { pinType, pin }; new format stores postcode/w3w/apple side by side.
 // Fold any legacy single pin into its matching field so nothing is lost.
 function migrateEntry(entry) {
@@ -3553,7 +3564,7 @@ function LocationPicture({ loc, packId, onField }) {
 }
 
 // ── One location, expanded ───────────────────────────────────────────────────
-function LocationDetail({ loc, contacts, packId, onField, onRemove }) {
+function LocationDetail({ loc, contacts, packId, regsAddr, onField, onRemove }) {
   const e = loc.entry
   const anyPin = PIN_KEYS.some(p => e[p])
   const firstPin = PIN_KEYS.find(p => e[p])
@@ -3590,6 +3601,16 @@ function LocationDetail({ loc, contacts, packId, onField, onRemove }) {
           placeholder="e.g. Premier Inn Carlisle Central" />
         <LocField label="Address" value={e.address} onChange={v => onField('address', v)}
           placeholder={'Street\nTown\nPostcode'} rows={3} />
+        {!e.address && regsAddr && (
+          <div className="rounded-lg bg-cyan-500/8 border border-cyan-500/20 p-2.5 space-y-1.5">
+            <p className="text-cyan-400/80 text-[10px] uppercase tracking-wide">From regulations</p>
+            <p className="text-white/80 text-sm whitespace-pre-wrap">{regsAddr}</p>
+            <button type="button" onClick={() => onField('address', regsAddr)}
+              className="text-xs font-medium px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 hover:bg-cyan-500/25 transition-colors">
+              Use this address
+            </button>
+          </div>
+        )}
         {PIN_TYPES.map(pt => (
           <div key={pt.id}>
             <p className="text-white/35 text-[10px] uppercase tracking-wide mb-1">{pt.label}</p>
@@ -3657,16 +3678,17 @@ function LocationDetail({ loc, contacts, packId, onField, onRemove }) {
   )
 }
 
-function LocationsTab({ pack, onSave }) {
+function LocationsTab({ pack, rally, onSave }) {
   const [locs, setLocs] = useState(() => pack?.locations || {})
   const [dirty, setDirty] = useState(false)
   const [open, setOpen] = useState(null)
 
   const customList = Array.isArray(locs._custom) ? locs._custom : []
   const contacts = pack?.team_members || []
+  const regsHints = regsLocationHints(rally?.regulations_data)
 
   const allLocations = [
-    ...LOCATION_FIELDS.map(f => ({ ...f, entry: migrateEntry(locs[f.key]) })),
+    ...LOCATION_FIELDS.map(f => ({ ...f, entry: migrateEntry(locs[f.key]), regsAddr: regsHints[f.key] || null })),
     ...customList.map(c => ({
       key: c.id, label: c.label || 'Location', color: c.color || '#94a3b8',
       rooming: !!c.rooming, custom: true, entry: migrateEntry(c),
@@ -3721,6 +3743,7 @@ function LocationsTab({ pack, onSave }) {
           loc={openLoc}
           contacts={contacts}
           packId={pack?.id}
+          regsAddr={openLoc.regsAddr}
           onField={(f, v) => updateField(openLoc.key, f, v)}
           onRemove={() => removeCustom(openLoc.key)}
         />
@@ -3748,6 +3771,7 @@ function LocationsTab({ pack, onSave }) {
         {allLocations.map(l => {
           const filled = entryHasDetail(l.entry)
           const summary = entrySummary(l.entry)
+          const regsOnly = !filled && !!l.regsAddr
           const rooms = Array.isArray(l.entry.rooms) ? l.entry.rooms.length : 0
           const pic = tilePicture(l.entry)
           return (
@@ -3772,9 +3796,14 @@ function LocationsTab({ pack, onSave }) {
                   </div>
                 )}
                 <p className="text-white font-semibold text-sm leading-tight">{l.label || 'Untitled location'}</p>
-                <p className={`text-xs mt-1 line-clamp-2 ${filled ? 'text-white/45' : 'text-white/20 italic'}`}>
-                  {filled ? (summary || 'Details added') : 'Not set'}
+                <p className={`text-xs mt-1 line-clamp-2 ${filled || regsOnly ? 'text-white/45' : 'text-white/20 italic'}`}>
+                  {filled ? (summary || 'Details added') : (regsOnly ? l.regsAddr.split('\n').filter(Boolean)[0] : 'Not set')}
                 </p>
+                {regsOnly && (
+                  <span className="inline-flex items-center gap-1 mt-2 text-[11px] px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    From regs
+                  </span>
+                )}
                 {rooms > 0 && (
                   <span className="inline-flex items-center gap-1 mt-2 text-[11px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 border border-amber-500/20">
                     <BedIcon className="w-3 h-3" />
